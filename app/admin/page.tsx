@@ -13,14 +13,14 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    
+
     try {
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "verifyLogin", password })
       });
-      
+
       if (res.ok) {
         localStorage.setItem("admin_authenticated", "true");
         router.push("/admin/dashboard");
@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-[#1a1a1a] flex flex-col items-center justify-center p-4 tilet-pattern">
       <div className="max-w-md w-full bg-zinc-900/80 backdrop-blur-xl p-8 rounded-2xl border border-accent-gold/20 shadow-2xl relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.05] pointer-events-none tilet-pattern" />
-        
+
         <div className="text-center mb-8 relative z-10">
           <h1 className="text-4xl font-serif text-accent-gold mb-2 uppercase tracking-widest">Addis Admin</h1>
           <p className="text-accent-gold/60 text-xs uppercase tracking-[0.3em]">Access Dashboard</p>
@@ -69,7 +69,7 @@ export default function AdminLoginPage() {
           </button>
         </form>
       </div>
-      
+
       <div className="mt-8 flex flex-col items-center gap-4">
         <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-bold cursor-pointer hover:text-accent-gold transition-colors" onClick={() => router.push("/admin/forgot-password")}>
           Forgot Password?

@@ -24,13 +24,6 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [logoSrc, setLogoSrc] = useState("/logo.png");
-
-  useEffect(() => {
-    // Avoid hydration mismatch by setting the dynamic URL after mounting
-    setLogoSrc(`/logo.png?v=${Date.now()}`);
-  }, []);
-
   // Existing states needed
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
@@ -858,8 +851,9 @@ export default function AdminDashboard() {
                 <h2 className={`text-3xl font-serif ${tm.textAcc} uppercase tracking-widest`}>Storefront Settings</h2>
                 <p className={`${tm.tableSubtext} text-xs mt-2 uppercase tracking-widest`}>Manage global content for the user storefront</p>
               </div>
-
-              <div className="grid grid-cols-1 gap-8">
+              {/* Restored settings container div */}
+              <div className="space-y-8">
+                <div className="grid grid-cols-1 gap-8">
                 {/* Hotel Branding */}
                 <div className={`${tm.formBg} p-6 md:p-8 rounded-2xl space-y-6`}>
                   <h3 className={`text-xl font-serif ${tm.textAcc} uppercase tracking-widest border-b ${tm.sidebarBorder} pb-3`}>Hotel Identity</h3>
@@ -891,41 +885,32 @@ export default function AdminDashboard() {
                     <div className="md:col-span-2">
                        <label className={`block text-[10px] uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Hotel Logo</label>
                        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
-                         <div className="w-24 h-24 relative border border-[#D4AF37]/30 rounded-lg overflow-hidden bg-black flex-shrink-0">
-                           <img src={logoSrc} alt="Current Logo" className="w-full h-full object-cover" />
-                         </div>
-                         <div className="flex-1">
-                           <input 
-                            type="file" 
-                            accept="image/*"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              const formData = new FormData();
-                              formData.append('file', file);
-                              try {
-                                const res = await fetch('/api/settings/logo', {
-                                  method: 'POST',
-                                  body: formData
-                                });
-                                if (res.ok) {
-                                  // Trigger a small state change to refresh the logo image if needed
-                                  // For now, it will just update on server. The ?v= query param handles cache.
-                                  window.location.reload(); 
-                                }
-                              } catch (err) {
-                                console.error("Logo upload failed", err);
-                              }
-                            }}
-                            className={`block w-full text-xs ${tm.textMuted}
-                              file:mr-4 file:py-2 file:px-4
-                              file:rounded-full file:border-0
-                              file:text-[10px] file:font-semibold
-                              file:bg-[#D4AF37]/10 file:text-[#D4AF37]
-                              hover:file:bg-[#D4AF37]/20 transition-all`}
-                           />
-                           <p className="text-[9px] text-gray-500 mt-2 uppercase tracking-tight">Recommended: Square PNG with transparent background. Replaces /public/logo.png</p>
-                         </div>
+                          <div className="w-24 h-24 relative border border-[#D4AF37]/30 rounded-lg overflow-hidden bg-black flex-shrink-0">
+                            <img src={siteContent.logo || "/logo.png"} alt="Current Logo" className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex-1">
+                            <input 
+                             type="file" 
+                             accept="image/*"
+                             disabled={isUploading}
+                             onChange={async (e) => {
+                               const file = e.target.files?.[0];
+                               if (!file) return;
+                               const url = await handleImageUpload(file);
+                               if (url) {
+                                 await updateSiteContent({ logo: url });
+                                 triggerSuccess();
+                               }
+                             }}
+                             className={`block w-full text-xs ${tm.textMuted}
+                               file:mr-4 file:py-2 file:px-4
+                               file:rounded-full file:border-0
+                               file:text-[10px] file:font-semibold
+                               file:bg-[#D4AF37]/10 file:text-[#D4AF37]
+                               hover:file:bg-[#D4AF37]/20 transition-all cursor-pointer`}
+                            />
+                            <p className="text-[9px] text-gray-500 mt-2 uppercase tracking-tight">Recommended: Square PNG with transparent background. Uploads to Cloudinary.</p>
+                          </div>
                        </div>
                     </div>
                   </div>
@@ -1061,6 +1046,7 @@ export default function AdminDashboard() {
                 <p className={`${tm.tableSubtext} text-[10px] uppercase tracking-[0.3em] animate-pulse`}>Changes are saved automatically as you type</p>
               </div>
             </div>
+          </div>
           )}
         </div>
       </main>

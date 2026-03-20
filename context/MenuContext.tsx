@@ -11,6 +11,7 @@ interface SiteContent {
   address: string;
   phone: string;
   email: string;
+  logo: string;
 }
 
 interface MenuContextType {
@@ -36,7 +37,8 @@ const initialSiteContent: SiteContent = {
   storyText: "Established in 1998, Addis Culinary brings the rich heritage of Ethiopian hospitality to your table. Every dish is prepared with love and authentic spices imported directly from the highlands. Our mission is to share the vibrant flavors and communal dining traditions of our motherland with the world.",
   address: "123 Cultural Way, Addis Ababa, Ethiopia",
   phone: "+251 11 123 4567",
-  email: "info@abayhotel.com"
+  email: "info@abayhotel.com",
+  logo: "/logo.png"
 };
 
 export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

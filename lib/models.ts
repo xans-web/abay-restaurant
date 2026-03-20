@@ -27,6 +27,7 @@ const SettingsSchema = new mongoose.Schema({
   _id: { type: String, default: 'global' },
   hotelName: { type: String, default: 'ABAY HOTEL' },
   hotelSlogan: { type: String, default: 'PREMIUM LUXURY DINING' },
+  logo: { type: String, default: '/logo.png' },
   storyTitle: { type: String, default: 'The Essence of Ethiopia' },
   storyText: { type: String, default: '' },
   address: { type: String, default: '' },

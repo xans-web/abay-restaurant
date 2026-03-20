@@ -125,13 +125,9 @@ export default function Home() {
   const [isLightMode, setIsLightMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [priceLimit, setPriceLimit] = useState(30);
-  const [logoSrc, setLogoSrc] = useState("/logo.png");
   const [showPriceFilter, setShowPriceFilter] = useState(false);
 
   useEffect(() => {
-    // Avoid hydration mismatch by setting the dynamic URL after mounting
-    setLogoSrc(`/logo.png?v=${Date.now()}`);
-    
     // 3-second Fast Polling for Real-Time Updates
     const interval = setInterval(() => {
       refreshData();
@@ -349,7 +345,7 @@ export default function Home() {
           {/* Logo and Title Group */}
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
             <div className="w-9 h-9 md:w-16 md:h-16 relative flex-shrink-0 border border-[#D4AF37]/30 rounded-lg overflow-hidden bg-black shadow-lg">
-              <img src={logoSrc} alt="Logo" className="w-full h-full object-cover" />
+              <img src={siteContent.logo || "/logo.png"} alt="Logo" className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col justify-center">
               <h1 className="text-[10px] md:text-3xl font-serif text-[#D4AF37] tracking-tighter leading-none font-bold uppercase">{siteContent.hotelName}</h1>
