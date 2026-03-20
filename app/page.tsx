@@ -97,7 +97,7 @@ const CategoryIcon = ({ name, className = "w-4 h-4" }: { name: string, className
 };
 
 // Safe Image Component to handle Hydration and Remote URLs
-const SafeImage = ({ src, alt, ...props }: any) => {
+const SafeImage = ({ src, alt, fill, ...props }: any) => {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
 
   useEffect(() => {
@@ -108,11 +108,10 @@ const SafeImage = ({ src, alt, ...props }: any) => {
   if (!imgSrc) return <div className="w-full h-full bg-[#D4AF37]/5 animate-pulse" />;
 
   return (
-    <Image 
+    <img 
       src={imgSrc} 
       alt={alt} 
       {...props}
-      onError={() => setImgSrc("/logo.png")} // Fallback to logo on error
     />
   );
 };

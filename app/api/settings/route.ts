@@ -32,6 +32,7 @@ export async function GET() {
     const { adminPassword, _id, __v, ...publicSettings } = data;
     return NextResponse.json(publicSettings);
   } catch (error) {
+    console.error("Settings GET Error:", error);
     return NextResponse.json({ error: 'Failed to read settings' }, { status: 500 });
   }
 }
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
     revalidatePath('/');
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error("Settings POST Error:", error);
     return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
   }
 }

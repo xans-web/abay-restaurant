@@ -42,8 +42,7 @@ export default function AdminDashboard() {
   });
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isLightMode, setIsLightMode] = useState(false);
-  const [imageMode, setImageMode] = useState<"file" | "url">("file");
-  const [urlInput, setUrlInput] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   const [editingImageUrlId, setEditingImageUrlId] = useState<number | null>(null);
   const [tempUrl, setTempUrl] = useState("");
   
@@ -140,17 +139,25 @@ export default function AdminDashboard() {
   }, [router]);
 
   const handleImageUpload = async (file: File) => {
-    setIsSaving(true);
+    setIsUploading(true);
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("upload_preset", "abay_preset");
+    
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await fetch("https://api.cloudinary.com/v1_1/dxxcicope/image/upload", { 
+        method: "POST", 
+        body: formData 
+      });
+      
+      if (!res.ok) throw new Error("Cloudinary upload failed");
+      
       const data = await res.json();
-      setIsSaving(false);
-      return data.url;
+      setIsUploading(false);
+      return data.secure_url;
     } catch (e) {
       console.error("Upload failed", e);
-      setIsSaving(false);
+      setIsUploading(false);
       return "";
     }
   };
@@ -428,62 +435,27 @@ export default function AdminDashboard() {
                     </div>
                     <div className="space-y-4">
                       <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <label className={`text-xs uppercase tracking-widest ${tm.textAcc} font-bold`}>Food Image</label>
-                          <div className="flex bg-zinc-800/10 dark:bg-zinc-800/50 p-1 rounded-lg gap-1 border border-[#D4AF37]/20">
-                            <button 
-                              type="button" onClick={() => setImageMode("file")}
-                              className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all ${imageMode === "file" ? 'bg-[#D4AF37] text-black shadow-sm' : `${tm.textMuted} hover:text-[#D4AF37]`}`}
-                            >
-                              File
-                            </button>
-                            <button 
-                              type="button" onClick={() => setImageMode("url")}
-                              className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all ${imageMode === "url" ? 'bg-[#D4AF37] text-black shadow-sm' : `${tm.textMuted} hover:text-[#D4AF37]`}`}
-                            >
-                              URL
-                            </button>
-                          </div>
-                        </div>
-
+                        <label className={`block text-xs uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Food Image</label>
                         <div className={`flex flex-col gap-4 p-4 border ${tm.sidebarBorder} ${tm.inputBg} rounded-2xl relative overflow-hidden`}>
-                          <div className="flex flex-col md:flex-row gap-4">
-                            <label className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed ${tm.sidebarBorder} rounded-xl p-4 cursor-pointer hover:border-[#D4AF37]/50 transition-all group ${imageMode === 'file' ? 'bg-[#D4AF37]/5 border-[#D4AF37]/30' : ''}`} onClick={() => setImageMode("file")}>
-                              <Upload className={`w-6 h-6 mb-2 ${imageMode === 'file' ? 'text-[#D4AF37]' : tm.textMuted}`} />
-                              <span className={`text-[10px] font-black uppercase tracking-widest ${imageMode === 'file' ? 'text-[#D4AF37]' : tm.textMuted}`}>Upload File</span>
-                              <input 
-                                type="file" 
-                                accept="image/*"
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    const url = await handleImageUpload(file);
-                                    if (url) setNewItem({...newItem, image: url});
-                                  }
-                                }} 
-                                className="hidden" 
-                              />
-                            </label>
-
-                            <div className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed ${tm.sidebarBorder} rounded-xl p-4 cursor-pointer hover:border-[#D4AF37]/50 transition-all group ${imageMode === 'url' ? 'bg-[#D4AF37]/5 border-[#D4AF37]/30' : ''}`} onClick={() => setImageMode("url")}>
-                              <Link className={`w-6 h-6 mb-2 ${imageMode === 'url' ? 'text-[#D4AF37]' : tm.textMuted}`} />
-                              <span className={`text-[10px] font-black uppercase tracking-widest ${imageMode === 'url' ? 'text-[#D4AF37]' : tm.textMuted}`}>Use URL</span>
-                              {imageMode === 'url' && (
-                                <input 
-                                  type="text" 
-                                  placeholder="https://..." 
-                                  value={urlInput}
-                                  autoFocus
-                                  onChange={(e) => {
-                                    setUrlInput(e.target.value);
-                                    setNewItem({...newItem, image: e.target.value});
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className={`mt-2 w-full bg-black/20 border border-[#D4AF37]/20 rounded py-1.5 px-3 text-[10px] focus:outline-none focus:border-[#D4AF37] placeholder:${tm.textMuted}`}
-                                />
-                              )}
-                            </div>
-                          </div>
+                          <label className={`w-full flex flex-col items-center justify-center border-2 border-dashed ${tm.sidebarBorder} rounded-xl p-8 cursor-pointer hover:border-[#D4AF37]/50 transition-all group bg-[#D4AF37]/5 border-[#D4AF37]/30`}>
+                            <Upload className={`w-10 h-10 mb-2 text-[#D4AF37] group-hover:scale-110 transition-transform`} />
+                            <span className={`text-[10px] font-black uppercase tracking-widest text-[#D4AF37]`}>
+                              {isUploading ? "Uploading to Cloudinary..." : "Click to Upload Photo"}
+                            </span>
+                            <input 
+                              type="file" 
+                              accept="image/*"
+                              disabled={isUploading}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const url = await handleImageUpload(file);
+                                  if (url) setNewItem({...newItem, image: url});
+                                }
+                              }} 
+                              className="hidden" 
+                            />
+                          </label>
 
                           {newItem.image && (
                             <div className="flex items-center justify-between bg-[#D4AF37]/5 p-3 rounded-xl border border-[#D4AF37]/20 animate-fade-in-up">
@@ -498,7 +470,7 @@ export default function AdminDashboard() {
                               </div>
                               <button 
                                 type="button" 
-                                onClick={() => { setNewItem({...newItem, image: ""}); setUrlInput(""); }}
+                                onClick={() => setNewItem({...newItem, image: ""})}
                                 className="h-10 w-10 flex items-center justify-center rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm"
                               >
                                 <Trash2 className="w-5 h-5" />
@@ -507,6 +479,7 @@ export default function AdminDashboard() {
                           )}
                         </div>
                       </div>
+                      
                       <div className="grid grid-cols-1 gap-4">
                         <div>
                           <label className={`block text-xs uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Description</label>
@@ -523,7 +496,7 @@ export default function AdminDashboard() {
                           <span className={`${tm.tableSubtext} text-[10px] font-bold uppercase tracking-widest`}>New Item</span>
                         </label>
                       </div>
-                      <button type="submit" disabled={isSaving} className={`w-full bg-[#D4AF37] ${isLightMode ? 'text-white' : 'text-black'} py-4 rounded-lg font-black uppercase tracking-[0.2em] text-sm shadow-md active:scale-95 disabled:opacity-50 mt-2 transition-all`}>
+                      <button type="submit" disabled={isSaving || isUploading} className={`w-full bg-[#D4AF37] ${isLightMode ? 'text-white' : 'text-black'} py-4 rounded-lg font-black uppercase tracking-[0.2em] text-sm shadow-md active:scale-95 disabled:opacity-50 mt-2 transition-all`}>
                         {isSaving ? "Saving..." : "Save Item"}
                       </button>
                     </div>
@@ -575,10 +548,11 @@ export default function AdminDashboard() {
                         
                         {/* Primary Image Controls (Touch Centered) */}
                         <div className="flex gap-2">
-                          <label className={`h-11 w-11 flex items-center justify-center rounded-xl bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20 active:scale-95 transition-all shadow-sm`}>
+                          <label className={`h-11 w-11 flex items-center justify-center rounded-xl bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20 active:scale-95 transition-all shadow-sm ${isUploading ? 'opacity-50 animate-pulse cursor-wait' : ''}`}>
                             <Upload className="w-5 h-5" />
                             <input 
                               type="file" accept="image/*" className="hidden"
+                              disabled={isUploading}
                               onChange={async (e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
@@ -588,19 +562,6 @@ export default function AdminDashboard() {
                               }}
                             />
                           </label>
-                          <button 
-                            onClick={() => {
-                              if (editingImageUrlId === item.id) {
-                                setEditingImageUrlId(null);
-                              } else {
-                                setEditingImageUrlId(item.id);
-                                setTempUrl(item.image || "");
-                              }
-                            }}
-                            className={`h-11 w-11 flex items-center justify-center rounded-xl transition-all shadow-sm ${editingImageUrlId === item.id ? 'bg-[#D4AF37] text-black shadow-[#D4AF37]/20' : 'bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20'}`}
-                          >
-                            <Link className="w-5 h-5" />
-                          </button>
                           {item.image && (
                             <button 
                               onClick={() => handleUpdateItem(item.id, { image: "" })}
@@ -635,36 +596,6 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     
-                    {/* Inline URL Input (Conditional) */}
-                    {editingImageUrlId === item.id && (
-                      <div className="mt-4 animate-in slide-in-from-top-2 duration-200">
-                        <div className={`p-4 rounded-xl border border-[#D4AF37]/30 bg-black/40 backdrop-blur-sm space-y-3`}>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[#D4AF37]">Enter Image URL</span>
-                            <button onClick={() => setEditingImageUrlId(null)} className="text-zinc-500 hover:text-white text-[10px] uppercase font-bold">Cancel</button>
-                          </div>
-                          <div className="flex gap-2">
-                            <input 
-                              type="text" 
-                              value={tempUrl}
-                              onChange={(e) => setTempUrl(e.target.value)}
-                              placeholder="https://example.com/image.jpg"
-                              className={`flex-1 bg-black border border-white/10 rounded-lg py-3 px-4 text-xs focus:outline-none focus:border-[#D4AF37] text-white`}
-                            />
-                            <button 
-                              onClick={() => {
-                                handleUpdateItem(item.id, { image: tempUrl });
-                                setEditingImageUrlId(null);
-                              }}
-                              className="bg-[#D4AF37] text-black px-4 rounded-lg text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-                            >
-                              Save
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
                     {/* Status & Tags Toggles */}
                     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800/10 dark:border-zinc-800/50 pt-4 mb-4">
                       <div className="flex items-center gap-4">
