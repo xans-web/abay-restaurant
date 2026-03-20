@@ -126,6 +126,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [priceLimit, setPriceLimit] = useState(30);
   const [showPriceFilter, setShowPriceFilter] = useState(false);
+  const [expandedDesc, setExpandedDesc] = useState<number | null>(null);
 
   useEffect(() => {
     // 3-second Fast Polling for Real-Time Updates
@@ -624,14 +625,24 @@ export default function Home() {
                     </div>
 
                     {/* Symmetrical Structured Frame Layer */}
-                    <div className={`w-full h-full ${tm.cardFrameBg} rounded-3xl border ${tm.cardFrameBorder} ${tm.cardFrameHoverBorder} pl-40 md:pl-56 pr-8 md:pr-12 p-8 flex flex-col items-center justify-center text-center relative ${tm.cardFrameShadow} ${tm.cardFrameHoverShadow} transition-all duration-500`}>
-                      <div className="space-y-1.5 md:space-y-2 mb-4">
-                        <h3 className={`text-xl md:text-3xl font-serif font-black ${tm.cardTitleColor} transition-colors leading-tight break-words line-clamp-1`}>{item[lang].name}</h3>
-                        <span className={`${tm.cardPriceColor} font-black text-lg md:text-2xl whitespace-nowrap`}>{item.price} ETB</span>
-                        <p className={`${tm.cardDescColor} text-[10px] md:text-sm italic font-light line-clamp-2 md:line-clamp-3 leading-relaxed transition-colors max-w-[200px] md:max-w-[300px]`}>{item[lang].desc}</p>
+                    <div className={`w-full h-full ${tm.cardFrameBg} rounded-3xl border ${tm.cardFrameBorder} ${tm.cardFrameHoverBorder} pl-40 md:pl-56 pr-4 md:pr-12 py-3 md:py-6 flex flex-col items-center justify-between text-center relative overflow-hidden ${tm.cardFrameShadow} ${tm.cardFrameHoverShadow} transition-all duration-500`}>
+                      {/* Top: Name & Price */}
+                      <div className="flex-shrink-0 w-full max-w-[200px] md:max-w-[300px]">
+                        <h3 className={`text-lg md:text-3xl font-serif font-black ${tm.cardTitleColor} transition-colors leading-tight break-words line-clamp-1`}>{item[lang].name}</h3>
+                        <span className={`${tm.cardPriceColor} font-black text-base md:text-2xl whitespace-nowrap`}>{item.price} ETB</span>
                       </div>
-                      
-                      <div className={`flex items-center justify-center gap-6 mt-2 pt-3 border-t ${tm.cardDivider} w-full max-w-[200px] md:max-w-[300px]`}>
+
+                      {/* Middle: Description (clamped, click to expand) */}
+                      <div className="flex-1 flex items-center w-full max-w-[200px] md:max-w-[300px] min-h-0 overflow-hidden py-1">
+                        <p
+                          onClick={() => setExpandedDesc(expandedDesc === item.id ? null : item.id)}
+                          className={`${tm.cardDescColor} text-[10px] md:text-sm italic font-light leading-relaxed transition-colors cursor-pointer hover:opacity-80 w-full line-clamp-2 overflow-hidden`}
+                          title="Tap to read more"
+                        >{item[lang].desc}</p>
+                      </div>
+
+                      {/* Bottom: ADD button (always anchored) */}
+                      <div className={`flex-shrink-0 flex items-center justify-center pt-2 border-t ${tm.cardDivider} w-full max-w-[200px] md:max-w-[300px]`}>
                         <div className="flex items-center gap-2">
                           {cart[item.id] > 0 && !item.isSoldOut && (
                             <div className={`flex items-center gap-2 border ${isLightMode ? 'border-[#D4AF37]/20 bg-gray-50' : 'border-[#D4AF37]/30 bg-black/20'} rounded-full px-1.5 py-1 shadow-md`}>
@@ -654,7 +665,7 @@ export default function Home() {
                             <button 
                               disabled={item.isSoldOut}
                               onClick={() => addToCart(item.id)}
-                              className={`flex items-center justify-center gap-2 px-6 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${
+                              className={`flex items-center justify-center gap-2 px-5 py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${
                                 item.isSoldOut ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-[#D4AF37] text-black hover:scale-105 active:scale-95 shadow-lg shadow-[#D4AF37]/20'
                               }`}
                             >
@@ -672,6 +683,34 @@ export default function Home() {
           ))}
         </div>
       </main>
+
+      {/* Expanded Description Popup */}
+      {expandedDesc !== null && (() => {
+        const allItems = menuData.flatMap(s => s.items);
+        const found = allItems.find(i => i.id === expandedDesc);
+        if (!found) return null;
+        return (
+          <div className="fixed inset-0 z-[1200] flex items-center justify-center px-4" onClick={() => setExpandedDesc(null)}>
+            <div className={`absolute inset-0 ${tm.modalOverlay} backdrop-blur-sm`} />
+            <div
+              className={`relative z-10 ${tm.modalBg} border border-[#D4AF37]/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-fade-in-up`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setExpandedDesc(null)}
+                className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+              <h3 className={`text-xl font-serif font-black ${tm.cardTitleColor} mb-1`}>{found[lang].name}</h3>
+              <span className={`${tm.cardPriceColor} font-black text-lg`}>{found.price} ETB</span>
+              <div className={`mt-3 pt-3 border-t border-[#D4AF37]/10`}>
+                <p className={`${tm.cardDescColor} text-sm italic font-light leading-relaxed`}>{found[lang].desc}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Floating Cart Button (Mobile Optimized) */}
       <div className={`fixed bottom-0 left-0 right-0 p-6 z-[950] transition-all duration-700 pointer-events-none lg:px-12 ${cartItemCount > 0 ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0'}`}>
