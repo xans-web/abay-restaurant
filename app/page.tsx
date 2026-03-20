@@ -132,10 +132,10 @@ export default function Home() {
     // Avoid hydration mismatch by setting the dynamic URL after mounting
     setLogoSrc(`/logo.png?v=${Date.now()}`);
     
-    // 5-second Fast Polling for Real-Time Updates
+    // 3-second Fast Polling for Real-Time Updates
     const interval = setInterval(() => {
       refreshData();
-    }, 5000);
+    }, 3000);
     return () => clearInterval(interval);
   }, [refreshData]);
 

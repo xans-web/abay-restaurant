@@ -45,7 +45,7 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshData = useCallback(async () => {
     try {
-      const timestamp = Date.now();
+      const timestamp = new Date().getTime();
       const menuRes = await fetch(`/api/menu?t=${timestamp}`, { cache: 'no-store' });
       const menuData = await menuRes.json();
       if (Array.isArray(menuData) && menuData.length > 0) {
