@@ -80,30 +80,30 @@ export default function AdminDashboard() {
 
   const tm = isLightMode ? {
     bgApp: "bg-[#F9F9F9]",
-    textApp: "text-[#333333]",
+    textApp: "text-[#1A1A1A]",
     bgSidebar: "bg-white",
-    borderMain: "border-[#D4AF37]/20",
+    borderMain: "border-[#D4AF37]/30",
     textAcc: "text-[#D4AF37]",
-    bgStats: "bg-[#FFFBEB] border-[#D4AF37]/30",
+    bgStats: "bg-[#FFFBEB] border-[#D4AF37]/40",
     textStats: "text-[#D4AF37]",
-    tableBg: "bg-white border-gray-100",
-    tableHeader: "bg-[#FFFBEB] text-[#D4AF37]",
+    tableBg: "bg-white border-gray-100 shadow-sm",
+    tableHeader: "bg-[#FFFBEB] text-[#D4AF37] font-bold uppercase tracking-widest",
     tableRowHover: "hover:bg-[#FFFBEB]",
     tableRowActive: "bg-[#FFFBEB]/50",
-    activeTab: "bg-[#D4AF37] text-white shadow-[0_4px_15px_rgba(212,175,55,0.4)]",
-    inactiveTab: "text-gray-500 hover:bg-[#FFFBEB] hover:text-[#D4AF37]",
-    formBg: "bg-white border-gray-100 shadow-sm",
-    inputBg: "bg-[#F9F9F9] border-gray-200 text-gray-800",
+    activeTab: "bg-[#D4AF37] text-white shadow-md",
+    inactiveTab: "text-[#4A4A4A] hover:bg-[#FFFBEB] hover:text-[#D4AF37]",
+    formBg: "bg-white border-gray-100 shadow-md",
+    inputBg: "bg-[#F9F9F9] border-gray-200 text-[#1A1A1A]",
     sidebarBtnHover: "hover:bg-[#FFFBEB]",
     sidebarBorder: "border-[#D4AF37]/20",
-    bulkMarkActive: "border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37] hover:text-white",
+    bulkMarkActive: "border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-white",
     bulkMarkInactive: "border-gray-300 text-gray-500 hover:bg-gray-100",
     deleteBtn: "text-gray-400 hover:text-red-500",
-    tableText: "text-gray-800",
-    tableSubtext: "text-gray-400",
-    textMuted: "text-gray-400",
-    modalOverlay: "bg-white/80",
-    modalBg: "bg-white shadow-xl border border-[#D4AF37]/30"
+    tableText: "text-[#1A1A1A] font-bold",
+    tableSubtext: "text-[#4A4A4A]",
+    textMuted: "text-[#4A4A4A]/60",
+    modalOverlay: "bg-black/40",
+    modalBg: "bg-white shadow-2xl border border-[#D4AF37]/30"
   } : {
     bgApp: "bg-[#000000]",
     textApp: "text-white",
@@ -587,7 +587,7 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-center gap-2 mt-2">
-                           <span className={`${tm.textAcc} font-black text-xl`}>$</span>
+                           <span className={`${tm.textAcc} font-black text-xl`}>ETB</span>
                            <input 
                             type="number" step="0.01" value={item.price}
                             onChange={(e) => handlePriceChange(item.id, e.target.value)}
@@ -742,11 +742,14 @@ export default function AdminDashboard() {
                             <span className={`${tm.tableSubtext} text-xs font-serif italic ml-1`}>{item.categoryName}</span>
                           </td>
                           <td className="p-4">
-                            <input 
-                              type="number" step="0.01" value={item.price}
-                              onChange={(e) => handlePriceChange(item.id, e.target.value)}
-                              className="bg-transparent border-none text-[#D4AF37] font-black w-24 focus:outline-none"
-                            />
+                             <div className="flex items-center gap-1">
+                               <span className={`${tm.textAcc} font-bold text-xs`}>ETB</span>
+                               <input 
+                                type="number" step="0.01" value={item.price}
+                                onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                                className={`bg-transparent border-none ${tm.textAcc} font-black w-20 focus:outline-none text-base`}
+                              />
+                             </div>
                           </td>
                           <td className="p-4 text-center">
                             <div className="flex flex-col items-center gap-2">

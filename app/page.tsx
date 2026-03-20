@@ -143,6 +143,23 @@ export default function Home() {
   const [cart, setCart] = useState<{ [key: number]: number }>({});
   const [showModal, setShowModal] = useState<"story" | "contact" | "cart" | null>(null);
   const [isSpecialsHovered, setIsSpecialsHovered] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
+
+  const { minPrice, maxPrice } = useMemo(() => {
+    const allPrices = menuData.flatMap(cat => cat.items.map(item => item.price));
+    if (allPrices.length === 0) return { minPrice: 0, maxPrice: 100 };
+    return {
+      minPrice: Math.floor(Math.min(...allPrices)),
+      maxPrice: Math.ceil(Math.max(...allPrices))
+    };
+  }, [menuData]);
+
+  // Update priceLimit when maxPrice changes, but only if it's currently at a default
+  useEffect(() => {
+    if (maxPrice > 0) {
+      setPriceLimit(maxPrice);
+    }
+  }, [maxPrice]);
 
   // Sync theme with localStorage
   useEffect(() => {
@@ -171,21 +188,20 @@ export default function Home() {
 
   // Theme variables derived logically
   const tm = isLightMode ? {
-    bgApp: "bg-[#F5F5F5]",
-    textApp: "text-[#333333]",
-    bgHeader: "bg-[#F5F5F5]/95",
+    bgApp: "bg-[#F9F9F9]",
+    textApp: "text-[#1A1A1A]",
+    bgHeader: "bg-white/90",
     borderMain: "border-[#D4AF37]/30",
     textAcc: "text-[#D4AF37]",
-    textMuted: "text-gray-400",
+    textMuted: "text-[#4A4A4A]/60",
     searchBg: "bg-white",
-    searchIcon: "text-gray-400 group-focus-within:text-[#D4AF37]",
-    switchBtn: "bg-[#FFFBEB] border-[#D4AF37]/20 text-[#D4AF37]",
-    heroGradient: "from-white/95 via-white/80",
-    footerBg: "bg-[#F5F5F5]",
-    catBgActive: "bg-[#D4AF37] text-white shadow-[0_4px_15px_rgba(212,175,55,0.4)]",
-    catBgInactive: "bg-white text-gray-500 border-gray-200 hover:border-[#D4AF37]/50 hover:text-[#D4AF37]",
-    watermark: "text-[#D4AF37]/5",
-    cardBg: "bg-white bg-none border-[#D4AF37]/10 shadow-[0_2px_15px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_30px_rgba(212,175,55,0.15)]",
+    searchIcon: "text-[#D4AF37]",
+    switchBtn: "bg-white border-[#D4AF37]/20 text-[#D4AF37]",
+    heroGradient: "from-white to-[#F9F9F9]",
+    catBgActive: "bg-[#D4AF37] text-white shadow-md",
+    catBgInactive: "bg-white text-gray-400 border-gray-200 hover:border-[#D4AF37]",
+    watermark: "text-[#D4AF37]/10",
+    cardBg: "bg-white border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:border-[#D4AF37]/40",
     cartModalTotal: "text-[#D4AF37]",
     // Light mode food card specifics
     cardFrameBg: "bg-white",
@@ -194,20 +210,21 @@ export default function Home() {
     cardFrameHoverBorder: "hover:border-[#D4AF37]/40",
     cardFrameHoverShadow: "hover:shadow-[0_12px_40px_rgba(212,175,55,0.12),0_4px_12px_rgba(0,0,0,0.06)]",
     cardTitleColor: "text-[#1A1A1A]",
-    cardDescColor: "text-gray-500",
+    cardDescColor: "text-[#4A4A4A]",
     cardPriceColor: "text-[#D4AF37]",
     cardDivider: "border-[#D4AF37]/10",
-    cardTitleSecondary: "text-[#1A1A1A] group-hover:text-[#D4AF37]",
-    cardDesc: "text-gray-500",
-    textDesc: "text-gray-500",
+    cardTitleSecondary: "text-[#1A1A1A] group-hover:text-[#D4AF37] font-bold",
+    cardDesc: "text-[#4A4A4A]",
+    textDesc: "text-[#4A4A4A]",
     cardTitle: "text-[#1A1A1A]",
-    borderCard: "border-[#D4AF37]/15 hover:border-[#D4AF37]/40",
-    smallBtnBg: "bg-gray-50 border-[#D4AF37]/20 text-[#D4AF37] hover:bg-gray-100",
+    borderCard: "border-gray-100 hover:border-[#D4AF37]/30",
+    smallBtnBg: "bg-gray-50 border-gray-100 text-[#D4AF37] hover:bg-gray-100",
     addBtnActive: "border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-white active:scale-95 shadow-sm",
     addBtnDisabled: "border border-gray-200 text-gray-300 bg-gray-50 cursor-not-allowed",
     modalOverlay: "bg-black/60",
-    modalBg: "bg-white border border-[#D4AF37]/20 shadow-2xl",
-    modalText: "text-[#333333]"
+    modalBg: "bg-white border border-[#D4AF37]/30 shadow-2xl",
+    modalText: "text-[#1A1A1A]",
+    footerBg: "bg-[#F5F5F5]"
   } : {
     bgApp: "bg-[#1A1A1A]",
     textApp: "text-white",
@@ -282,6 +299,9 @@ export default function Home() {
     });
     return total;
   }, [cart, menuData]);
+
+  const formattedTotal = `${cartTotal.toLocaleString()} ETB`;
+
 
   const cartItemCount = Object.values(cart).reduce((a, b) => a + b, 0);
 
@@ -394,31 +414,39 @@ export default function Home() {
                     
                     <div className="flex items-center justify-between mb-4">
                       <span className={`text-[10px] uppercase tracking-[0.3em] font-black ${isLightMode ? 'text-gray-400' : 'text-white/40'}`}>Price Range</span>
-                      <span className="text-lg font-black text-[#D4AF37] font-serif">${priceLimit}</span>
+                      <span className="text-lg font-black text-[#D4AF37] font-serif">{priceLimit} ETB</span>
                     </div>
                     
                     {/* Sleek Range Slider */}
                     <div className="relative mb-5">
                       <input 
                         type="range" 
-                        min="5" 
-                        max="100" 
+                        min={minPrice} 
+                        max={maxPrice} 
                         value={priceLimit}
                         onChange={(e) => setPriceLimit(Number(e.target.value))}
                         className="price-range-slider w-full"
                       />
                       <div className="flex justify-between mt-2">
-                        <span className={`text-[9px] font-bold ${isLightMode ? 'text-gray-300' : 'text-white/20'}`}>$5</span>
-                        <span className={`text-[9px] font-bold ${isLightMode ? 'text-gray-300' : 'text-white/20'}`}>$100</span>
+                        <span className={`text-[9px] font-bold ${isLightMode ? 'text-gray-400' : 'text-white/20'}`}>{minPrice} ETB</span>
+                        <span className={`text-[9px] font-bold ${isLightMode ? 'text-gray-400' : 'text-white/20'}`}>{maxPrice} ETB</span>
                       </div>
                     </div>
 
                     <button
-                      onClick={() => setShowPriceFilter(false)}
-                      className="w-full py-2.5 rounded-xl bg-[#D4AF37] text-black text-[10px] font-black uppercase tracking-[0.3em] hover:brightness-110 active:scale-[0.98] transition-all"
+                      onClick={() => {
+                        setIsFiltering(true);
+                        setTimeout(() => {
+                          setIsFiltering(false);
+                          setShowPriceFilter(false);
+                        }, 2000);
+                      }}
+                      disabled={isFiltering}
+                      className="w-full py-2.5 rounded-xl bg-[#D4AF37] text-black text-[10px] font-black uppercase tracking-[0.3em] hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-70"
                     >
-                      Done
+                      {isFiltering ? "Filtering..." : "Done"}
                     </button>
+
                   </div>
                 </>
               )}
@@ -479,7 +507,7 @@ export default function Home() {
               <div className="absolute bottom-2 left-4 z-10">
                 <h3 className={`font-serif text-sm md:text-xl tracking-wide leading-tight transition-colors ${tm.cardTitleSecondary}`}>{item[lang].name}</h3>
                 <div className="flex items-center gap-4 mt-1">
-                  <span className="text-[#D4AF37] font-black text-xs md:text-lg">${item.price}</span>
+                  <span className="text-[#D4AF37] font-black text-xs md:text-lg">{item.price} ETB</span>
                   <div className="flex items-center gap-2">
                     {cart[item.id] > 0 ? (
                       <div className={`flex items-center gap-2 ${isLightMode ? 'bg-zinc-950/80 backdrop-blur-md' : 'bg-[#000000]'} rounded-full px-1.5 py-0.5 border border-[#D4AF37]/30`}>
