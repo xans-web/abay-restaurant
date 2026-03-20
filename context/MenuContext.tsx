@@ -16,14 +16,14 @@ interface SiteContent {
 interface MenuContextType {
   menuData: MenuSection[];
   siteContent: SiteContent;
-  updateMenuItem: (itemId: number, updates: Partial<MenuItem>) => void;
-  bulkUpdateItems: (itemIds: number[], updates: Partial<MenuItem>) => void;
-  addMenuItem: (categoryId: string, item: Omit<MenuItem, "id">) => void;
-  deleteMenuItem: (itemId: number) => void;
-  addCategory: (categoryName: string) => void;
-  renameCategory: (categoryId: string, newName: string) => void;
-  deleteCategory: (categoryId: string) => void;
-  updateSiteContent: (updates: Partial<SiteContent>) => void;
+  updateMenuItem: (itemId: number, updates: Partial<MenuItem>) => Promise<boolean>;
+  bulkUpdateItems: (itemIds: number[], updates: Partial<MenuItem>) => Promise<boolean>;
+  addMenuItem: (categoryId: string, item: Omit<MenuItem, "id">) => Promise<boolean>;
+  deleteMenuItem: (itemId: number) => Promise<boolean>;
+  addCategory: (categoryName: string) => Promise<boolean>;
+  renameCategory: (categoryId: string, newName: string) => Promise<boolean>;
+  deleteCategory: (categoryId: string) => Promise<boolean>;
+  updateSiteContent: (updates: Partial<SiteContent>) => Promise<boolean>;
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined);
@@ -44,7 +44,7 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Load menu data from server on mount
   useEffect(() => {
-    fetch('/api/menu')
+    fetch('/api/menu', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -54,7 +54,7 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .catch(err => console.error("Failed to load menu data from server", err));
 
     // Load site content from API
-    fetch('/api/settings')
+    fetch('/api/settings', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (!data.error) setSiteContent(data);
@@ -65,35 +65,39 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Save menu data to server (fire-and-forget for responsiveness)
   const saveToServer = useCallback(async (data: MenuSection[]) => {
     try {
-      await fetch('/api/menu', {
+      const res = await fetch('/api/menu', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
+      return res.ok;
     } catch (err) {
       console.error("Failed to save menu data to server", err);
+      return false;
     }
   }, []);
 
   const saveContentToServer = async (content: SiteContent) => {
     try {
-      await fetch('/api/settings', {
+      const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(content)
       });
+      return res.ok;
     } catch (err) {
       console.error("Failed to save settings to server", err);
+      return false;
     }
   };
 
-  const updateSiteContent = (updates: Partial<SiteContent>) => {
+  const updateSiteContent = async (updates: Partial<SiteContent>) => {
     const newContent = { ...siteContent, ...updates };
     setSiteContent(newContent);
-    saveContentToServer(newContent);
+    return await saveContentToServer(newContent);
   };
 
-  const updateMenuItem = (itemId: number, updates: Partial<MenuItem>) => {
+  const updateMenuItem = async (itemId: number, updates: Partial<MenuItem>) => {
     const newData = menuData.map(section => ({
       ...section,
       items: section.items.map(item => 
@@ -101,10 +105,10 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       )
     }));
     setMenuData(newData);
-    saveToServer(newData);
+    return await saveToServer(newData);
   };
 
-  const bulkUpdateItems = (itemIds: number[], updates: Partial<MenuItem>) => {
+  const bulkUpdateItems = async (itemIds: number[], updates: Partial<MenuItem>) => {
     const newData = menuData.map(section => ({
       ...section,
       items: section.items.map(item => 
@@ -112,10 +116,10 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       )
     }));
     setMenuData(newData);
-    saveToServer(newData);
+    return await saveToServer(newData);
   };
 
-  const addMenuItem = (categoryId: string, item: Omit<MenuItem, "id">) => {
+  const addMenuItem = async (categoryId: string, item: Omit<MenuItem, "id">) => {
     const newItem = { ...item, id: Date.now() };
     const newData = menuData.map(section => 
       section.id === categoryId 
@@ -123,19 +127,19 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
         : section
     );
     setMenuData(newData);
-    saveToServer(newData);
+    return await saveToServer(newData);
   };
 
-  const deleteMenuItem = (itemId: number) => {
+  const deleteMenuItem = async (itemId: number) => {
     const newData = menuData.map(section => ({
       ...section,
       items: section.items.filter(item => item.id !== itemId)
     }));
     setMenuData(newData);
-    saveToServer(newData);
+    return await saveToServer(newData);
   };
 
-  const addCategory = (categoryName: string) => {
+  const addCategory = async (categoryName: string) => {
     const newCategory: MenuSection = {
       category: categoryName,
       id: categoryName.toLowerCase().replace(/\s+/g, '-'),
@@ -143,23 +147,23 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     const newData = [...menuData, newCategory];
     setMenuData(newData);
-    saveToServer(newData);
+    return await saveToServer(newData);
   };
 
-  const renameCategory = (categoryId: string, newName: string) => {
+  const renameCategory = async (categoryId: string, newName: string) => {
     const newData = menuData.map(section => 
       section.id === categoryId 
         ? { ...section, category: newName } 
         : section
     );
     setMenuData(newData);
-    saveToServer(newData);
+    return await saveToServer(newData);
   };
 
-  const deleteCategory = (categoryId: string) => {
+  const deleteCategory = async (categoryId: string) => {
     const newData = menuData.filter(section => section.id !== categoryId);
     setMenuData(newData);
-    saveToServer(newData);
+    return await saveToServer(newData);
   };
 
   return (

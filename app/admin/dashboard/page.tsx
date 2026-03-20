@@ -216,9 +216,9 @@ export default function AdminDashboard() {
   const handleUpdateItem = async (id: number, updates: Partial<MenuItem>) => {
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 400));
-    updateMenuItem(id, updates);
+    const success = await updateMenuItem(id, updates);
     setIsSaving(false);
-    triggerSuccess();
+    if (success) triggerSuccess();
   };
 
   const handlePriceChange = (id: number, priceStr: string) => {
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    addMenuItem(newItem.categoryId, {
+    const success = await addMenuItem(newItem.categoryId, {
       en: { name: newItem.enName, desc: newItem.enDesc },
       am: { name: newItem.amName || newItem.enName, desc: newItem.amDesc || newItem.enDesc },
       price: parseFloat(newItem.price),
@@ -248,13 +248,13 @@ export default function AdminDashboard() {
     setNewItem({ enName: "", amName: "", enDesc: "", amDesc: "", price: "", categoryId: "", image: "", isSpecial: false, isNew: true });
     setShowAddForm(false);
     setIsSaving(false);
-    triggerSuccess();
+    if (success) triggerSuccess();
   };
 
-  const handleDeleteItem = (id: number, name: string) => {
+  const handleDeleteItem = async (id: number, name: string) => {
     if (confirm(`Are you sure you want to delete "${name}"?`)) {
-      deleteMenuItem(id);
-      triggerSuccess();
+      const success = await deleteMenuItem(id);
+      if (success) triggerSuccess();
     }
   };
 

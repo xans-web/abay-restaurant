@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       }
       settings.adminPassword = body.newPassword;
       await settings.save();
-      revalidatePath('/');
+      revalidatePath('/', 'layout');
       return NextResponse.json({ success: true });
     }
 
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     
     Object.assign(settings, body);
     await settings.save();
-    revalidatePath('/');
+    revalidatePath('/', 'layout');
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Settings POST Error:", error);

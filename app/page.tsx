@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering to ensure real-time updates for users
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useMemo, useEffect } from "react";

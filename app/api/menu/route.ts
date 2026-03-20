@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     await connectToDatabase();
     await MenuSection.deleteMany({});
     await MenuSection.insertMany(body);
-    revalidatePath('/');
+    revalidatePath('/', 'layout');
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to save menu data' }, { status: 500 });
@@ -118,7 +118,7 @@ export async function PUT(request: Request) {
     }
     
     const updatedMenu = await MenuSection.find({}).select('-_id -__v -items._id').lean();
-    revalidatePath('/');
+    revalidatePath('/', 'layout');
     return NextResponse.json({ success: true, data: updatedMenu });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to update menu data' }, { status: 500 });
@@ -157,7 +157,7 @@ export async function DELETE(request: Request) {
     }
     
     const updatedMenu = await MenuSection.find({}).select('-_id -__v -items._id').lean();
-    revalidatePath('/');
+    revalidatePath('/', 'layout');
     return NextResponse.json({ success: true, data: updatedMenu });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
