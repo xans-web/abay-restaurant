@@ -374,7 +374,7 @@ export default function Home() {
             
             {/* Price Filter - Desktop: inline slider, Mobile: gold icon + dropdown */}
             <div className={`hidden lg:flex items-center gap-2 ${tm.searchBg} border ${tm.borderMain} rounded-full px-3 py-1 flex-shrink-0 h-9 transition-colors`}>
-              <span className="text-[10px] text-[#D4AF37] font-black">${priceLimit}</span>
+              <span className="text-[10px] text-[#D4AF37] font-black">{priceLimit} ETB</span>
               <input 
                 type="range" min="5" max="100" value={priceLimit}
                 onChange={(e) => setPriceLimit(Number(e.target.value))}
@@ -631,7 +631,7 @@ export default function Home() {
                     <div className={`w-full h-full ${tm.cardFrameBg} rounded-3xl border ${tm.cardFrameBorder} ${tm.cardFrameHoverBorder} pl-40 md:pl-56 pr-8 md:pr-12 p-8 flex flex-col items-center justify-center text-center relative ${tm.cardFrameShadow} ${tm.cardFrameHoverShadow} transition-all duration-500`}>
                       <div className="space-y-1.5 md:space-y-2 mb-4">
                         <h3 className={`text-xl md:text-3xl font-serif font-black ${tm.cardTitleColor} transition-colors leading-tight break-words line-clamp-1`}>{item[lang].name}</h3>
-                        <span className={`${tm.cardPriceColor} font-black text-lg md:text-2xl whitespace-nowrap`}>${item.price}</span>
+                        <span className={`${tm.cardPriceColor} font-black text-lg md:text-2xl whitespace-nowrap`}>{item.price} ETB</span>
                         <p className={`${tm.cardDescColor} text-[10px] md:text-sm italic font-light line-clamp-2 md:line-clamp-3 leading-relaxed transition-colors max-w-[200px] md:max-w-[300px]`}>{item[lang].desc}</p>
                       </div>
                       
