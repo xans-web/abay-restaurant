@@ -38,7 +38,19 @@ export default function AdminDashboard() {
   const [isUploading, setIsUploading] = useState(false);
   const [editingImageUrlId, setEditingImageUrlId] = useState<number | null>(null);
   const [tempUrl, setTempUrl] = useState("");
-  
+
+  // ── Batch Save State ────────────────────────────────────────────
+  // Accumulated local edits per menu item (id → partial updates)
+  const [pendingEdits, setPendingEdits] = useState<Record<number, Partial<MenuItem>>>({});
+  // Accumulated local edits for site settings
+  const [pendingSettings, setPendingSettings] = useState<Partial<typeof siteContent>>({});
+  // Track which item ids have unsaved changes for highlighting
+  const [dirtyItemIds, setDirtyItemIds] = useState<Set<number>>(new Set());
+
+  const hasPendingChanges =
+    Object.keys(pendingEdits).length > 0 || Object.keys(pendingSettings).length > 0;
+  // ────────────────────────────────────────────────────────────────
+
   // Security Settings State
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -207,19 +219,53 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleUpdateItem = async (id: number, updates: Partial<MenuItem>) => {
+  /** Accumulate changes locally — no API call until DONE is clicked */
+  const handleUpdateItem = (id: number, updates: Partial<MenuItem>) => {
+    setPendingEdits(prev => ({ ...prev, [id]: { ...prev[id], ...updates } }));
+    setDirtyItemIds(prev => new Set(prev).add(id));
+  };
+
+  const handlePriceChange = (id: number, priceStr: string) => {
+    const price = parseFloat(priceStr);
+    if (!isNaN(price)) handleUpdateItem(id, { price });
+  };
+
+  /** Immediately persist an item (used for image upload / delete since those fire on click) */
+  const handleUpdateItemNow = async (id: number, updates: Partial<MenuItem>) => {
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 400));
+    await new Promise(resolve => setTimeout(resolve, 300));
     const success = await updateMenuItem(id, updates);
     setIsSaving(false);
     if (success) triggerSuccess();
   };
 
-  const handlePriceChange = (id: number, priceStr: string) => {
-    const price = parseFloat(priceStr);
-    if (!isNaN(price)) {
-      handleUpdateItem(id, { price });
+  /** Save all accumulated pending changes to MongoDB in one go */
+  const handleSaveAll = async () => {
+    if (!hasPendingChanges) return;
+    setIsSaving(true);
+    const promises: Promise<unknown>[] = [];
+
+    // Save pending menu item edits
+    for (const [idStr, updates] of Object.entries(pendingEdits)) {
+      const id = Number(idStr);
+      // Merge pending edits with the live item data
+      const liveItem = menuData.flatMap(s => s.items).find(i => i.id === id);
+      if (liveItem) promises.push(updateMenuItem(id, { ...liveItem, ...updates }));
     }
+
+    // Save pending settings
+    if (Object.keys(pendingSettings).length > 0) {
+      promises.push(updateSiteContent(pendingSettings));
+    }
+
+    await Promise.all(promises);
+
+    // Clear pending state
+    setPendingEdits({});
+    setPendingSettings({});
+    setDirtyItemIds(new Set());
+    setIsSaving(false);
+    triggerSuccess();
   };
 
   const handleAddFood = async (e: React.FormEvent) => {
@@ -265,20 +311,32 @@ export default function AdminDashboard() {
     <div className={`min-h-screen ${tm.bgApp} ${tm.textApp} flex font-sans selection:bg-[#D4AF37]/30 transition-colors duration-500`}>
       
       {/* Mobile Top Bar */}
-      <div className={`lg:hidden fixed top-0 left-0 right-0 h-[70px] ${tm.bgSidebar} border-b ${tm.sidebarBorder} z-[1100] flex items-center justify-between px-6 shadow-md transition-colors duration-500`}>
-        <h1 className="text-lg font-serif text-[#D4AF37] uppercase tracking-widest font-black truncate max-w-[200px]">
+      <div className={`lg:hidden fixed top-0 left-0 right-0 h-[70px] ${tm.bgSidebar} border-b ${tm.sidebarBorder} z-[1100] flex items-center justify-between px-4 shadow-md transition-colors duration-500`}>
+        <h1 className="text-lg font-serif text-[#D4AF37] uppercase tracking-widest font-black truncate max-w-[140px]">
           {activeTab === "dashboard" ? "Dashboard" : activeTab === "menu" ? "Manage Menu" : activeTab === "categories" ? "Categories" : "Settings"}
         </h1>
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className={`p-3 ${tm.textAcc} focus:outline-none h-11 w-11 flex items-center justify-center`}
-        >
-          {isMobileMenuOpen ? (
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-          ) : (
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" /></svg>
+        <div className="flex items-center gap-2">
+          {hasPendingChanges && (
+            <button
+              onClick={handleSaveAll}
+              disabled={isSaving}
+              className="px-4 py-2 bg-[#D4AF37] text-black text-[10px] font-black uppercase tracking-widest rounded-full shadow-md active:scale-95 transition-all flex items-center gap-1.5 animate-pulse"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+              DONE
+            </button>
           )}
-        </button>
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className={`p-3 ${tm.textAcc} focus:outline-none h-11 w-11 flex items-center justify-center`}
+          >
+            {isMobileMenuOpen ? (
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+            ) : (
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            )}
+          </button>
+        </div>
       </div>
       {/* Mobile Overlay Menu */}
       {isMobileMenuOpen && (
@@ -312,8 +370,20 @@ export default function AdminDashboard() {
 
       {/* Sidebar - Desktop Only */}
       <aside className={`hidden lg:flex fixed inset-y-0 left-0 ${tm.bgSidebar} border-r ${tm.sidebarBorder} shadow-sm transition-all duration-300 z-50 flex-col ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
-        <div className={`h-[70px] flex items-center justify-between px-4 border-b ${tm.sidebarBorder}`}>
-          {isSidebarOpen && <h1 className="text-xl font-serif text-[#D4AF37] uppercase tracking-widest truncate">Admin Panel</h1>}
+        <div className={`h-[70px] flex items-center justify-between px-4 border-b ${tm.sidebarBorder} gap-2`}>
+          {isSidebarOpen && <h1 className="text-xl font-serif text-[#D4AF37] uppercase tracking-widest truncate flex-1">Admin Panel</h1>}
+          {/* Global DONE / Save All Button */}
+          {hasPendingChanges && (
+            <button
+              onClick={handleSaveAll}
+              disabled={isSaving}
+              title="Save all pending changes"
+              className="px-3 py-1.5 bg-[#D4AF37] text-black text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 animate-pulse flex-shrink-0"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+              {isSidebarOpen ? 'SAVE ALL' : ''}
+            </button>
+          )}
           <div className="flex items-center gap-1">
             <button 
               onClick={() => setIsLightMode(!isLightMode)}
@@ -551,14 +621,14 @@ export default function AdminDashboard() {
                                 const file = e.target.files?.[0];
                                 if (file) {
                                   const url = await handleImageUpload(file);
-                                  if (url) handleUpdateItem(item.id, { image: url });
+                                  if (url) handleUpdateItemNow(item.id, { image: url });
                                 }
                               }}
                             />
                           </label>
                           {item.image && (
                             <button 
-                              onClick={() => handleUpdateItem(item.id, { image: "" })}
+                              onClick={() => handleUpdateItemNow(item.id, { image: "" })}
                               className="h-11 w-11 flex items-center justify-center rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 active:scale-95 transition-all shadow-sm"
                             >
                               <Trash2 className="w-5 h-5" />
@@ -571,9 +641,12 @@ export default function AdminDashboard() {
                       <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                         <div className="space-y-1">
                           <input 
-                            type="text" value={item.en.name}
+                            type="text" 
+                            value={(pendingEdits[item.id]?.en as {name?: string; desc?: string} | undefined)?.name ?? item.en.name}
                             onChange={(e) => handleUpdateItem(item.id, { en: { ...item.en, name: e.target.value } })}
-                            className={`bg-transparent border-none text-2xl font-serif ${tm.tableText} font-black focus:outline-none w-full truncate placeholder:opacity-30`}
+                            className={`bg-transparent border-b text-2xl font-serif ${tm.tableText} font-black focus:outline-none w-full truncate placeholder:opacity-30 ${
+                              dirtyItemIds.has(item.id) ? 'border-[#D4AF37]' : 'border-transparent'
+                            } transition-colors`}
                             placeholder="Menu name..."
                           />
                           <p className={`${tm.tableSubtext} text-[10px] uppercase tracking-[0.1em] font-black opacity-60`}>{item.categoryName}</p>
@@ -582,9 +655,12 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-2 mt-2">
                            <span className={`${tm.textAcc} font-black text-xl`}>ETB</span>
                            <input 
-                            type="number" step="0.01" value={item.price}
+                            type="number" step="0.01" 
+                            value={pendingEdits[item.id]?.price ?? item.price}
                             onChange={(e) => handlePriceChange(item.id, e.target.value)}
-                            className="bg-transparent border-none text-[#D4AF37] font-black w-24 focus:outline-none text-2xl"
+                            className={`bg-transparent border-b text-[#D4AF37] font-black w-24 focus:outline-none text-2xl ${
+                              dirtyItemIds.has(item.id) ? 'border-[#D4AF37]' : 'border-transparent'
+                            } transition-colors`}
                           />
                         </div>
                       </div>
@@ -717,7 +793,7 @@ export default function AdminDashboard() {
                                 </button>
                                 {item.image && (
                                   <button 
-                                    onClick={() => handleUpdateItem(item.id, { image: "" })}
+                                    onClick={() => handleUpdateItemNow(item.id, { image: "" })}
                                     className="text-red-500 hover:bg-red-500 hover:text-white w-full flex items-center justify-center py-2 transition-all"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -728,9 +804,12 @@ export default function AdminDashboard() {
                           </td>
                           <td className="p-4 flex flex-col gap-1">
                             <input 
-                              type="text" value={item.en.name}
+                              type="text"
+                              value={(pendingEdits[item.id]?.en as {name?: string; desc?: string} | undefined)?.name ?? item.en.name}
                               onChange={(e) => handleUpdateItem(item.id, { en: { ...item.en, name: e.target.value } })}
-                              className={`bg-transparent border-none text-base font-serif ${tm.tableText} font-bold focus:outline-none w-full`}
+                              className={`bg-transparent border-b text-base font-serif ${tm.tableText} font-bold focus:outline-none w-full ${
+                                dirtyItemIds.has(item.id) ? 'border-[#D4AF37]' : 'border-transparent'
+                              } transition-colors`}
                             />
                             <span className={`${tm.tableSubtext} text-xs font-serif italic ml-1`}>{item.categoryName}</span>
                           </td>
@@ -738,9 +817,12 @@ export default function AdminDashboard() {
                              <div className="flex items-center gap-1">
                                <span className={`${tm.textAcc} font-bold text-xs`}>ETB</span>
                                <input 
-                                type="number" step="0.01" value={item.price}
+                                type="number" step="0.01"
+                                value={pendingEdits[item.id]?.price ?? item.price}
                                 onChange={(e) => handlePriceChange(item.id, e.target.value)}
-                                className={`bg-transparent border-none ${tm.textAcc} font-black w-20 focus:outline-none text-base`}
+                                className={`bg-transparent border-b ${tm.textAcc} font-black w-20 focus:outline-none text-base ${
+                                  dirtyItemIds.has(item.id) ? 'border-[#D4AF37]' : 'border-transparent'
+                                } transition-colors`}
                               />
                              </div>
                           </td>
@@ -751,28 +833,28 @@ export default function AdminDashboard() {
                                 <label className="flex items-center justify-center cursor-pointer">
                                   <input 
                                     type="checkbox" className="sr-only" 
-                                    checked={!item.isSoldOut}
-                                    onChange={() => handleUpdateItem(item.id, { isSoldOut: !item.isSoldOut })}
+                                    checked={!(pendingEdits[item.id]?.isSoldOut ?? item.isSoldOut)}
+                                    onChange={() => handleUpdateItem(item.id, { isSoldOut: !(pendingEdits[item.id]?.isSoldOut ?? item.isSoldOut) })}
                                   />
-                                  <div className={`w-10 h-5 rounded-full transition-colors border ${tm.sidebarBorder} relative ${!item.isSoldOut ? 'bg-[#D4AF37]' : (isLightMode ? 'bg-gray-200' : 'bg-zinc-800')}`}>
-                                    <div className={`w-3 h-3 rounded-full absolute top-[3px] transition-transform ${!item.isSoldOut ? 'translate-x-[22px] bg-white' : 'translate-x-1 bg-white'}`}></div>
+                                  <div className={`w-10 h-5 rounded-full transition-colors border ${tm.sidebarBorder} relative ${!(pendingEdits[item.id]?.isSoldOut ?? item.isSoldOut) ? 'bg-[#D4AF37]' : (isLightMode ? 'bg-gray-200' : 'bg-zinc-800')}`}>
+                                    <div className={`w-3 h-3 rounded-full absolute top-[3px] transition-transform ${!(pendingEdits[item.id]?.isSoldOut ?? item.isSoldOut) ? 'translate-x-[22px] bg-white' : 'translate-x-1 bg-white'}`}></div>
                                   </div>
                                 </label>
                                 <span className="text-[8px] uppercase tracking-widest text-[#D4AF37] mt-1 block font-bold">
-                                  {!item.isSoldOut ? "Active" : "Inactive"}
+                                  {!(pendingEdits[item.id]?.isSoldOut ?? item.isSoldOut) ? "Active" : "Inactive"}
                                 </span>
                               </div>
                               {/* Tags Grid */}
                               <div className="flex gap-1">
                                 <button 
-                                  onClick={() => handleUpdateItem(item.id, { isSpecial: !item.isSpecial })}
-                                  className={`px-2 py-0.5 rounded text-[7.5px] font-black uppercase tracking-widest transition-colors ${item.isSpecial ? (isLightMode ? 'bg-[#D4AF37] text-white' : 'bg-[#D4AF37] text-black') : `border ${tm.sidebarBorder} ${tm.textAcc} ${tm.sidebarBtnHover}`}`}
+                                  onClick={() => handleUpdateItem(item.id, { isSpecial: !(pendingEdits[item.id]?.isSpecial ?? item.isSpecial) })}
+                                  className={`px-2 py-0.5 rounded text-[7.5px] font-black uppercase tracking-widest transition-colors ${(pendingEdits[item.id]?.isSpecial ?? item.isSpecial) ? (isLightMode ? 'bg-[#D4AF37] text-white' : 'bg-[#D4AF37] text-black') : `border ${tm.sidebarBorder} ${tm.textAcc} ${tm.sidebarBtnHover}`}`}
                                 >
                                   Special
                                 </button>
                                 <button 
-                                  onClick={() => handleUpdateItem(item.id, { isNew: !item.isNew })}
-                                  className={`px-2 py-0.5 rounded text-[7.5px] font-black uppercase tracking-widest transition-colors ${item.isNew ? 'bg-green-500 text-white' : `border ${tm.sidebarBorder} ${tm.tableSubtext}`}`}
+                                  onClick={() => handleUpdateItem(item.id, { isNew: !(pendingEdits[item.id]?.isNew ?? item.isNew) })}
+                                  className={`px-2 py-0.5 rounded text-[7.5px] font-black uppercase tracking-widest transition-colors ${(pendingEdits[item.id]?.isNew ?? item.isNew) ? 'bg-green-500 text-white' : `border ${tm.sidebarBorder} ${tm.tableSubtext}`}`}
                                 >
                                   New
                                 </button>
@@ -862,24 +944,18 @@ export default function AdminDashboard() {
                       <label className={`block text-[10px] uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Hotel Name</label>
                       <input 
                         type="text" 
-                        value={siteContent.hotelName} 
-                        onChange={async (e) => {
-                          const success = await updateSiteContent({ hotelName: e.target.value });
-                          if (success) router.refresh();
-                        }}
-                        className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all font-serif text-xl`} 
+                        value={pendingSettings.hotelName ?? siteContent.hotelName} 
+                        onChange={(e) => setPendingSettings(p => ({ ...p, hotelName: e.target.value }))}
+                        className={`w-full border rounded py-3 px-4 focus:outline-none transition-all font-serif text-xl ${pendingSettings.hotelName !== undefined ? `${tm.inputBg} border-[#D4AF37]` : `${tm.inputBg} border-[#D4AF37]/30 focus:border-[#D4AF37]/50`}`} 
                       />
                     </div>
                     <div>
                       <label className={`block text-[10px] uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Hotel Slogan</label>
                       <input 
                         type="text" 
-                        value={siteContent.hotelSlogan} 
-                        onChange={async (e) => {
-                          const success = await updateSiteContent({ hotelSlogan: e.target.value });
-                          if (success) router.refresh();
-                        }}
-                        className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all font-serif italic`} 
+                        value={pendingSettings.hotelSlogan ?? siteContent.hotelSlogan} 
+                        onChange={(e) => setPendingSettings(p => ({ ...p, hotelSlogan: e.target.value }))}
+                        className={`w-full border rounded py-3 px-4 focus:outline-none transition-all font-serif italic ${pendingSettings.hotelSlogan !== undefined ? `${tm.inputBg} border-[#D4AF37]` : `${tm.inputBg} border-[#D4AF37]/30 focus:border-[#D4AF37]/50`}`} 
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -923,36 +999,27 @@ export default function AdminDashboard() {
                       <label className={`block text-[10px] uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Phone Number</label>
                       <input 
                         type="text" 
-                        value={siteContent.phone} 
-                        onChange={async (e) => {
-                          const success = await updateSiteContent({ phone: e.target.value });
-                          if (success) router.refresh();
-                        }}
-                        className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all font-mono`} 
+                        value={pendingSettings.phone ?? siteContent.phone} 
+                        onChange={(e) => setPendingSettings(p => ({ ...p, phone: e.target.value }))}
+                        className={`w-full border rounded py-3 px-4 focus:outline-none transition-all font-mono ${pendingSettings.phone !== undefined ? `${tm.inputBg} border-[#D4AF37]` : `${tm.inputBg} border-[#D4AF37]/30 focus:border-[#D4AF37]/50`}`} 
                       />
                     </div>
                     <div>
                       <label className={`block text-[10px] uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Email Address</label>
                       <input 
                         type="email" 
-                        value={siteContent.email} 
-                        onChange={async (e) => {
-                          const success = await updateSiteContent({ email: e.target.value });
-                          if (success) router.refresh();
-                        }}
-                        className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all font-mono`} 
+                        value={pendingSettings.email ?? siteContent.email} 
+                        onChange={(e) => setPendingSettings(p => ({ ...p, email: e.target.value }))}
+                        className={`w-full border rounded py-3 px-4 focus:outline-none transition-all font-mono ${pendingSettings.email !== undefined ? `${tm.inputBg} border-[#D4AF37]` : `${tm.inputBg} border-[#D4AF37]/30 focus:border-[#D4AF37]/50`}`} 
                       />
                     </div>
                     <div className="md:col-span-2">
                       <label className={`block text-[10px] uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Physical Address</label>
                       <input 
                         type="text" 
-                        value={siteContent.address} 
-                        onChange={async (e) => {
-                          const success = await updateSiteContent({ address: e.target.value });
-                          if (success) router.refresh();
-                        }}
-                        className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all`} 
+                        value={pendingSettings.address ?? siteContent.address} 
+                        onChange={(e) => setPendingSettings(p => ({ ...p, address: e.target.value }))}
+                        className={`w-full border rounded py-3 px-4 focus:outline-none transition-all ${pendingSettings.address !== undefined ? `${tm.inputBg} border-[#D4AF37]` : `${tm.inputBg} border-[#D4AF37]/30 focus:border-[#D4AF37]/50`}`} 
                       />
                     </div>
                   </div>
@@ -965,24 +1032,18 @@ export default function AdminDashboard() {
                     <label className={`block text-[10px] uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Story Title</label>
                     <input 
                       type="text" 
-                      value={siteContent.storyTitle} 
-                      onChange={async (e) => {
-                        const success = await updateSiteContent({ storyTitle: e.target.value });
-                        if (success) router.refresh();
-                      }}
-                      className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all font-serif text-lg`} 
+                      value={pendingSettings.storyTitle ?? siteContent.storyTitle} 
+                      onChange={(e) => setPendingSettings(p => ({ ...p, storyTitle: e.target.value }))}
+                      className={`w-full border rounded py-3 px-4 focus:outline-none transition-all font-serif text-lg ${pendingSettings.storyTitle !== undefined ? `${tm.inputBg} border-[#D4AF37]` : `${tm.inputBg} border-[#D4AF37]/30 focus:border-[#D4AF37]/50`}`} 
                     />
                   </div>
                   <div>
                     <label className={`block text-[10px] uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Full Story Text</label>
                     <textarea 
                       rows={6} 
-                      value={siteContent.storyText} 
-                      onChange={async (e) => {
-                        const success = await updateSiteContent({ storyText: e.target.value });
-                        if (success) router.refresh();
-                      }}
-                      className={`w-full ${tm.inputBg} border rounded py-4 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all resize-none leading-relaxed`} 
+                      value={pendingSettings.storyText ?? siteContent.storyText} 
+                      onChange={(e) => setPendingSettings(p => ({ ...p, storyText: e.target.value }))}
+                      className={`w-full border rounded py-4 px-4 focus:outline-none transition-all resize-none leading-relaxed ${pendingSettings.storyText !== undefined ? `${tm.inputBg} border-[#D4AF37]` : `${tm.inputBg} border-[#D4AF37]/30 focus:border-[#D4AF37]/50`}`} 
                     />
                   </div>
                 </div>
@@ -1042,9 +1103,18 @@ export default function AdminDashboard() {
 
               </div>
 
-              <div className="flex justify-center p-4">
-                <p className={`${tm.tableSubtext} text-[10px] uppercase tracking-[0.3em] animate-pulse`}>Changes are saved automatically as you type</p>
-              </div>
+              {hasPendingChanges && (
+                <div className="flex justify-center p-4">
+                  <button
+                    onClick={handleSaveAll}
+                    disabled={isSaving}
+                    className="px-8 py-3 bg-[#D4AF37] text-black font-black uppercase tracking-[0.2em] text-xs rounded-full shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 animate-pulse"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                    Save All Changes
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           )}
@@ -1056,7 +1126,7 @@ export default function AdminDashboard() {
         <div className={`fixed inset-0 z-[2000] ${tm.modalOverlay} backdrop-blur-sm flex items-center justify-center cursor-wait`}>
           <div className={`${tm.modalBg} px-10 py-6 rounded-xl flex items-center gap-6 shadow-2xl`}>
             <div className="w-8 h-8 border-4 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin" />
-            <p className={`${tm.tableText} font-serif uppercase tracking-[0.3em] text-sm`}>Processing...</p>
+            <p className={`${tm.tableText} font-serif uppercase tracking-[0.3em] text-sm`}>Processing all changes...</p>
           </div>
         </div>
       )}
@@ -1066,7 +1136,7 @@ export default function AdminDashboard() {
         <div className={`fixed bottom-8 right-8 z-[2000] ${tm.bgSidebar} px-8 py-4 border-l-4 border-[#D4AF37] shadow-2xl rounded-r`}>
           <p className={`${tm.textAcc} font-black uppercase tracking-[0.2em] text-xs flex items-center gap-3`}>
             <svg className="w-5 h-5 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-            Saved Successfully
+            All changes synced successfully!
           </p>
         </div>
       )}
