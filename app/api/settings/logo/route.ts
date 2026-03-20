@@ -16,6 +16,8 @@ export async function POST(request: Request) {
     const filePath = path.join(publicDir, "logo.png");
 
     await writeFile(filePath, buffer);
+    const { revalidatePath } = await import('next/cache');
+    revalidatePath('/', 'layout');
     return NextResponse.json({ success: true, url: "/logo.png" });
   } catch (error) {
     console.error("Logo upload error:", error);
