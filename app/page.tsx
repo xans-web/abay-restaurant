@@ -120,7 +120,7 @@ const SafeImage = ({ src, alt, fill, ...props }: any) => {
 };
 
 export default function Home() {
-  const { menuData, siteContent } = useMenu();
+  const { menuData, siteContent, refreshData } = useMenu();
   const [lang, setLang] = useState<"en" | "am">("en");
   const [isLightMode, setIsLightMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -131,7 +131,13 @@ export default function Home() {
   useEffect(() => {
     // Avoid hydration mismatch by setting the dynamic URL after mounting
     setLogoSrc(`/logo.png?v=${Date.now()}`);
-  }, []);
+    
+    // 5-second Fast Polling for Real-Time Updates
+    const interval = setInterval(() => {
+      refreshData();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [refreshData]);
 
   const [activeCategory, setActiveCategory] = useState("All");
   const [cart, setCart] = useState<{ [key: number]: number }>({});

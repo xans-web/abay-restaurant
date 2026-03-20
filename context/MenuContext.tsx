@@ -24,6 +24,7 @@ interface MenuContextType {
   renameCategory: (categoryId: string, newName: string) => Promise<boolean>;
   deleteCategory: (categoryId: string) => Promise<boolean>;
   updateSiteContent: (updates: Partial<SiteContent>) => Promise<boolean>;
+  refreshData: () => Promise<void>;
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined);
@@ -42,25 +43,29 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [menuData, setMenuData] = useState<MenuSection[]>(initialMenuData);
   const [siteContent, setSiteContent] = useState<SiteContent>(initialSiteContent);
 
+  const refreshData = useCallback(async () => {
+    try {
+      const timestamp = Date.now();
+      const menuRes = await fetch(`/api/menu?t=${timestamp}`, { cache: 'no-store' });
+      const menuData = await menuRes.json();
+      if (Array.isArray(menuData) && menuData.length > 0) {
+        setMenuData(menuData);
+      }
+
+      const settingsRes = await fetch(`/api/settings?t=${timestamp}`, { cache: 'no-store' });
+      const settingsData = await settingsRes.json();
+      if (!settingsData.error) {
+        setSiteContent(settingsData);
+      }
+    } catch (err) {
+      console.error("Failed to refresh data", err);
+    }
+  }, []);
+
   // Load menu data from server on mount
   useEffect(() => {
-    fetch('/api/menu', { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setMenuData(data);
-        }
-      })
-      .catch(err => console.error("Failed to load menu data from server", err));
-
-    // Load site content from API
-    fetch('/api/settings', { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
-        if (!data.error) setSiteContent(data);
-      })
-      .catch(err => console.error("Failed to load settings", err));
-  }, []);
+    refreshData();
+  }, [refreshData]);
 
   // Save menu data to server (fire-and-forget for responsiveness)
   const saveToServer = useCallback(async (data: MenuSection[]) => {
@@ -177,7 +182,8 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addCategory, 
       renameCategory, 
       deleteCategory,
-      updateSiteContent
+      updateSiteContent,
+      refreshData
     }}>
       {children}
     </MenuContext.Provider>

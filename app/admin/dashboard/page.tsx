@@ -170,7 +170,7 @@ export default function AdminDashboard() {
     if (selectedItems.length === 0) return;
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 800));
-    bulkUpdateItems(selectedItems, updates);
+    await bulkUpdateItems(selectedItems, updates);
     setSelectedItems([]);
     setIsSaving(false);
     triggerSuccess();
@@ -178,6 +178,7 @@ export default function AdminDashboard() {
 
   const triggerSuccess = () => {
     setShowSuccess(true);
+    router.refresh(); // Signal to Next.js that server data has changed
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
@@ -825,7 +826,10 @@ export default function AdminDashboard() {
                         <input 
                           type="text" 
                           value={cat.category}
-                          onChange={(e) => renameCategory(cat.id, e.target.value)}
+                          onChange={async (e) => {
+                            const success = await renameCategory(cat.id, e.target.value);
+                            if (success) router.refresh();
+                          }}
                           className={`bg-transparent border-none font-serif ${tm.tableText} font-bold text-lg focus:outline-none w-full`}
                         />
                         <span className={`text-xs ${tm.tableSubtext} uppercase tracking-widest`}>{cat.items.length} items</span>
@@ -862,7 +866,10 @@ export default function AdminDashboard() {
                       <input 
                         type="text" 
                         value={siteContent.hotelName} 
-                        onChange={(e) => updateSiteContent({ hotelName: e.target.value })}
+                        onChange={async (e) => {
+                          const success = await updateSiteContent({ hotelName: e.target.value });
+                          if (success) router.refresh();
+                        }}
                         className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all font-serif text-xl`} 
                       />
                     </div>
@@ -871,7 +878,10 @@ export default function AdminDashboard() {
                       <input 
                         type="text" 
                         value={siteContent.hotelSlogan} 
-                        onChange={(e) => updateSiteContent({ hotelSlogan: e.target.value })}
+                        onChange={async (e) => {
+                          const success = await updateSiteContent({ hotelSlogan: e.target.value });
+                          if (success) router.refresh();
+                        }}
                         className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all font-serif italic`} 
                       />
                     </div>
@@ -926,7 +936,10 @@ export default function AdminDashboard() {
                       <input 
                         type="text" 
                         value={siteContent.phone} 
-                        onChange={(e) => updateSiteContent({ phone: e.target.value })}
+                        onChange={async (e) => {
+                          const success = await updateSiteContent({ phone: e.target.value });
+                          if (success) router.refresh();
+                        }}
                         className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all font-mono`} 
                       />
                     </div>
@@ -935,7 +948,10 @@ export default function AdminDashboard() {
                       <input 
                         type="email" 
                         value={siteContent.email} 
-                        onChange={(e) => updateSiteContent({ email: e.target.value })}
+                        onChange={async (e) => {
+                          const success = await updateSiteContent({ email: e.target.value });
+                          if (success) router.refresh();
+                        }}
                         className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all font-mono`} 
                       />
                     </div>
@@ -944,7 +960,10 @@ export default function AdminDashboard() {
                       <input 
                         type="text" 
                         value={siteContent.address} 
-                        onChange={(e) => updateSiteContent({ address: e.target.value })}
+                        onChange={async (e) => {
+                          const success = await updateSiteContent({ address: e.target.value });
+                          if (success) router.refresh();
+                        }}
                         className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all`} 
                       />
                     </div>
@@ -959,7 +978,10 @@ export default function AdminDashboard() {
                     <input 
                       type="text" 
                       value={siteContent.storyTitle} 
-                      onChange={(e) => updateSiteContent({ storyTitle: e.target.value })}
+                      onChange={async (e) => {
+                        const success = await updateSiteContent({ storyTitle: e.target.value });
+                        if (success) router.refresh();
+                      }}
                       className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all font-serif text-lg`} 
                     />
                   </div>
@@ -968,7 +990,10 @@ export default function AdminDashboard() {
                     <textarea 
                       rows={6} 
                       value={siteContent.storyText} 
-                      onChange={(e) => updateSiteContent({ storyText: e.target.value })}
+                      onChange={async (e) => {
+                        const success = await updateSiteContent({ storyText: e.target.value });
+                        if (success) router.refresh();
+                      }}
                       className={`w-full ${tm.inputBg} border rounded py-4 px-4 focus:outline-none focus:border-[#D4AF37]/50 transition-all resize-none leading-relaxed`} 
                     />
                   </div>
