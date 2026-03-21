@@ -386,9 +386,10 @@ export default function Home() {
             <div className={`hidden lg:flex items-center gap-2 ${tm.searchBg} border ${tm.borderMain} rounded-full px-3 py-1 flex-shrink-0 h-9 transition-colors`}>
               <span className="text-[10px] text-[#D4AF37] font-black">{priceLimit} ETB</span>
               <input 
-                type="range" min="5" max="100" value={priceLimit}
+                type="range" min={minPrice} max={maxPrice} value={priceLimit}
                 onChange={(e) => setPriceLimit(Number(e.target.value))}
-                className="w-16 md:w-20 accent-[#D4AF37] cursor-pointer h-0.5"
+                className="price-range-slider w-16 md:w-24"
+                style={{ '--progress': `${maxPrice > minPrice ? ((priceLimit - minPrice) / (maxPrice - minPrice)) * 100 : 0}%` } as React.CSSProperties}
               />
             </div>
 
@@ -436,6 +437,7 @@ export default function Home() {
                         value={priceLimit}
                         onChange={(e) => setPriceLimit(Number(e.target.value))}
                         className="price-range-slider w-full"
+                        style={{ '--progress': `${maxPrice > minPrice ? ((priceLimit - minPrice) / (maxPrice - minPrice)) * 100 : 0}%` } as React.CSSProperties}
                       />
                       <div className="flex justify-between mt-2">
                         <span className={`text-[9px] font-bold ${isLightMode ? 'text-gray-400' : 'text-white/20'}`}>{minPrice} ETB</span>
@@ -714,7 +716,7 @@ export default function Home() {
       <div className={`fixed bottom-0 left-0 right-0 p-6 z-[950] transition-all duration-700 pointer-events-none lg:px-12 ${cartItemCount > 0 ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0'}`}>
         <button 
           onClick={() => setShowModal("cart")}
-          className={`mx-auto bg-[#D4AF37] text-black px-8 py-4 rounded-full font-black uppercase tracking-[0.2em] text-sm shadow-[0_10px_40px_rgba(212,175,55,0.4)] border-2 border-[#D4AF37] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 pointer-events-auto w-full max-w-md md:w-auto relative overflow-hidden group`}
+          className={`mx-auto bg-[#D4AF37] text-black px-8 py-4 rounded-full font-black uppercase tracking-[0.2em] text-sm shadow-[0_12px_40px_rgba(0,0,0,0.8)] border-2 border-[#D4AF37] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 pointer-events-auto w-full max-w-md md:w-auto relative overflow-hidden group`}
         >
           <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

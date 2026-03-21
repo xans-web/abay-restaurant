@@ -28,6 +28,7 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showStatusToast, setShowStatusToast] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItem, setNewItem] = useState({
@@ -237,6 +238,16 @@ export default function AdminDashboard() {
     const success = await updateMenuItem(id, updates);
     setIsSaving(false);
     if (success) triggerSuccess();
+  };
+
+  /** Instantly update the soldOut toggle and show a mini toast */
+  const handleToggleNow = async (id: number, updates: Partial<MenuItem>) => {
+    const success = await updateMenuItem(id, updates);
+    if (success) {
+      setShowStatusToast(true);
+      setTimeout(() => setShowStatusToast(false), 2000);
+      router.refresh();
+    }
   };
 
   /** Save all accumulated pending changes to MongoDB in one go */
@@ -701,7 +712,7 @@ export default function AdminDashboard() {
                           <input 
                             type="checkbox" className="sr-only" 
                             checked={!item.isSoldOut}
-                            onChange={() => handleUpdateItem(item.id, { isSoldOut: !item.isSoldOut })}
+                            onChange={() => handleToggleNow(item.id, { isSoldOut: !item.isSoldOut })}
                           />
                           <div className={`w-12 h-6 rounded-full border ${tm.sidebarBorder} relative transition-colors ${!item.isSoldOut ? 'bg-[#D4AF37]' : (isLightMode ? 'bg-gray-200' : 'bg-zinc-800')}`}>
                             <div className={`w-4 h-4 rounded-full absolute top-[3px] transition-transform ${!item.isSoldOut ? 'translate-x-7 bg-white' : 'translate-x-1 bg-white'}`}></div>
@@ -866,15 +877,15 @@ export default function AdminDashboard() {
                                 <label className="flex items-center justify-center cursor-pointer">
                                   <input 
                                     type="checkbox" className="sr-only" 
-                                    checked={!(pendingEdits[item.id]?.isSoldOut ?? item.isSoldOut)}
-                                    onChange={() => handleUpdateItem(item.id, { isSoldOut: !(pendingEdits[item.id]?.isSoldOut ?? item.isSoldOut) })}
+                                    checked={!item.isSoldOut}
+                                    onChange={() => handleToggleNow(item.id, { isSoldOut: !item.isSoldOut })}
                                   />
-                                  <div className={`w-10 h-5 rounded-full transition-colors border ${tm.sidebarBorder} relative ${!(pendingEdits[item.id]?.isSoldOut ?? item.isSoldOut) ? 'bg-[#D4AF37]' : (isLightMode ? 'bg-gray-200' : 'bg-zinc-800')}`}>
-                                    <div className={`w-3 h-3 rounded-full absolute top-[3px] transition-transform ${!(pendingEdits[item.id]?.isSoldOut ?? item.isSoldOut) ? 'translate-x-[22px] bg-white' : 'translate-x-1 bg-white'}`}></div>
+                                  <div className={`w-10 h-5 rounded-full transition-colors border ${tm.sidebarBorder} relative ${!item.isSoldOut ? 'bg-[#D4AF37]' : (isLightMode ? 'bg-gray-200' : 'bg-zinc-800')}`}>
+                                    <div className={`w-3 h-3 rounded-full absolute top-[3px] transition-transform ${!item.isSoldOut ? 'translate-x-[22px] bg-white' : 'translate-x-1 bg-white'}`}></div>
                                   </div>
                                 </label>
                                 <span className="text-[8px] uppercase tracking-widest text-[#D4AF37] mt-1 block font-bold">
-                                  {!(pendingEdits[item.id]?.isSoldOut ?? item.isSoldOut) ? "Active" : "Inactive"}
+                                  {!item.isSoldOut ? "Active" : "Inactive"}
                                 </span>
                               </div>
                               {/* Tags Grid */}
@@ -1166,11 +1177,19 @@ export default function AdminDashboard() {
 
       {/* Global Success Toast */}
       {showSuccess && (
-        <div className={`fixed bottom-8 right-8 z-[2000] ${tm.bgSidebar} px-8 py-4 border-l-4 border-[#D4AF37] shadow-2xl rounded-r`}>
+        <div className={`fixed bottom-8 right-8 z-[2000] ${tm.bgSidebar} px-8 py-4 border-l-4 border-[#D4AF37] shadow-2xl rounded-r animate-fade-in-up`}>
           <p className={`${tm.textAcc} font-black uppercase tracking-[0.2em] text-xs flex items-center gap-3`}>
             <svg className="w-5 h-5 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
             All changes synced successfully!
           </p>
+        </div>
+      )}
+
+      {/* Mini Status Toast */}
+      {showStatusToast && (
+        <div className={`fixed bottom-6 inset-x-0 mx-auto w-max z-[2000] bg-[#D4AF37] text-black px-6 py-2 rounded-full shadow-lg animate-fade-in-up flex items-center gap-2`}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+          <span className="font-black uppercase tracking-widest text-[10px]">Status Updated</span>
         </div>
       )}
     </div>
