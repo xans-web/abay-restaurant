@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useMenu } from "@/context/MenuContext";
 import { Sun, Moon, SlidersHorizontal, X } from "lucide-react";
 
@@ -127,6 +127,20 @@ export default function Home() {
   const [priceLimit, setPriceLimit] = useState(30);
   const [showPriceFilter, setShowPriceFilter] = useState(false);
   const [expandedDesc, setExpandedDesc] = useState<number | null>(null);
+  const filterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-close filter after 5s of inactivity
+  useEffect(() => {
+    if (showPriceFilter) {
+      if (filterTimeoutRef.current) clearTimeout(filterTimeoutRef.current);
+      filterTimeoutRef.current = setTimeout(() => {
+        setShowPriceFilter(false);
+      }, 5000);
+    }
+    return () => {
+      if (filterTimeoutRef.current) clearTimeout(filterTimeoutRef.current);
+    };
+  }, [showPriceFilter, priceLimit]);
 
   useEffect(() => {
     // 3-second Fast Polling for Real-Time Updates
@@ -140,7 +154,6 @@ export default function Home() {
   const [cart, setCart] = useState<{ [key: number]: number }>({});
   const [showModal, setShowModal] = useState<"story" | "contact" | "cart" | null>(null);
   const [isSpecialsHovered, setIsSpecialsHovered] = useState(false);
-  const [isFiltering, setIsFiltering] = useState(false);
 
   const { minPrice, maxPrice } = useMemo(() => {
     const allPrices = menuData.flatMap(cat => cat.items.map(item => item.price));
@@ -383,14 +396,14 @@ export default function Home() {
             <div className="relative lg:hidden flex-shrink-0">
               <button
                 onClick={() => setShowPriceFilter(!showPriceFilter)}
-                className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all active:scale-95 ${
+                className={`px-3 md:px-4 h-7 md:h-9 rounded-full border flex items-center justify-center transition-all active:scale-95 flex-shrink-0 ${
                   showPriceFilter
                     ? 'bg-[#D4AF37] border-[#D4AF37] text-black shadow-[0_0_16px_rgba(212,175,55,0.5)]'
                     : `${tm.switchBtn} ${tm.borderMain}`
                 }`}
                 aria-label="Price filter"
               >
-                <SlidersHorizontal className="w-3 h-3" />
+                <span className="text-[10px] md:text-xs font-black tracking-widest uppercase">ETB</span>
               </button>
               
               {/* Mobile Price Filter Dropdown Overlay */}
@@ -401,21 +414,21 @@ export default function Home() {
                     className="fixed inset-0 z-[1050]" 
                     onClick={() => setShowPriceFilter(false)} 
                   />
-                  <div className={`absolute right-0 top-[calc(100%+12px)] z-[1060] w-[280px] rounded-2xl border border-[#D4AF37]/30 ${
+                  <div className={`absolute right-0 top-[calc(100%+12px)] z-[1060] w-[90vw] max-w-[340px] rounded-2xl border border-[#D4AF37]/30 ${
                     isLightMode 
                       ? 'bg-white/95 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.12),0_0_0_1px_rgba(212,175,55,0.1)]' 
                       : 'bg-[#0A0A0A]/95 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.8)]'
                   } p-5 animate-price-filter-in`}>
                     {/* Gold notch arrow */}
-                    <div className="absolute -top-2 right-3 w-4 h-4 rotate-45 border-l border-t border-[#D4AF37]/30" style={{ background: isLightMode ? 'rgba(255,255,255,0.95)' : 'rgba(10,10,10,0.95)' }} />
+                    <div className="absolute -top-2 right-4 w-4 h-4 rotate-45 border-l border-t border-[#D4AF37]/30" style={{ background: isLightMode ? 'rgba(255,255,255,0.95)' : 'rgba(10,10,10,0.95)' }} />
                     
                     <div className="flex items-center justify-between mb-4">
-                      <span className={`text-[10px] uppercase tracking-[0.3em] font-black ${isLightMode ? 'text-gray-400' : 'text-white/40'}`}>Price Range</span>
+                      <span className={`text-[10px] uppercase tracking-[0.3em] font-black ${isLightMode ? 'text-gray-400' : 'text-white/40'}`}>Max Price</span>
                       <span className="text-lg font-black text-[#D4AF37] font-serif">{priceLimit} ETB</span>
                     </div>
                     
                     {/* Sleek Range Slider */}
-                    <div className="relative mb-5">
+                    <div className="relative mb-2">
                       <input 
                         type="range" 
                         min={minPrice} 
@@ -429,21 +442,6 @@ export default function Home() {
                         <span className={`text-[9px] font-bold ${isLightMode ? 'text-gray-400' : 'text-white/20'}`}>{maxPrice} ETB</span>
                       </div>
                     </div>
-
-                    <button
-                      onClick={() => {
-                        setIsFiltering(true);
-                        setTimeout(() => {
-                          setIsFiltering(false);
-                          setShowPriceFilter(false);
-                        }, 2000);
-                      }}
-                      disabled={isFiltering}
-                      className="w-full py-2.5 rounded-xl bg-[#D4AF37] text-black text-[10px] font-black uppercase tracking-[0.3em] hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-70"
-                    >
-                      {isFiltering ? "Filtering..." : "Done"}
-                    </button>
-
                   </div>
                 </>
               )}
