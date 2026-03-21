@@ -221,7 +221,7 @@ export default function Home() {
     cardFrameHoverShadow: "hover:shadow-[0_12px_40px_rgba(212,175,55,0.12),0_4px_12px_rgba(0,0,0,0.06)]",
     cardTitleColor: "text-[#1A1A1A]",
     cardDescColor: "text-[#4A4A4A]",
-    cardPriceColor: "text-[#1A1A1A]",
+    cardPriceColor: "text-[#D4AF37]",
     cardDivider: "border-[#D4AF37]/10",
     cardTitleSecondary: "text-[#1A1A1A] group-hover:text-[#D4AF37] font-bold",
     cardDesc: "text-[#4A4A4A]",
@@ -384,7 +384,7 @@ export default function Home() {
             
             {/* Price Filter - Desktop: inline slider, Mobile: gold icon + dropdown */}
             <div className={`hidden lg:flex items-center gap-2 ${tm.searchBg} border ${tm.borderMain} rounded-full px-3 py-1 flex-shrink-0 h-9 transition-colors`}>
-              <span className={`text-[10px] ${isLightMode ? 'text-[#1A1A1A]' : 'text-[#D4AF37]'} font-black`}>{priceLimit} ETB</span>
+              <span className="text-[10px] text-[#D4AF37] font-black">{priceLimit} ETB</span>
               <input 
                 type="range" min={minPrice} max={maxPrice} value={priceLimit}
                 onChange={(e) => setPriceLimit(Number(e.target.value))}
@@ -425,7 +425,7 @@ export default function Home() {
                     
                     <div className="flex items-center justify-between mb-4">
                       <span className={`text-[10px] uppercase tracking-[0.3em] font-black ${isLightMode ? 'text-gray-400' : 'text-white/40'}`}>Max Price</span>
-                      <span className={`text-lg font-black ${isLightMode ? 'text-[#1A1A1A]' : 'text-[#D4AF37]'} font-serif`}>{priceLimit} ETB</span>
+                      <span className="text-lg font-black text-[#D4AF37] font-serif">{priceLimit} ETB</span>
                     </div>
                     
                     {/* Sleek Range Slider */}
@@ -502,7 +502,7 @@ export default function Home() {
               )}
               {/* No darkening overlay for 100% clarity */}
               <div className="absolute bottom-2 left-4 z-10">
-                <h3 className={`font-serif text-sm md:text-xl tracking-wide leading-tight transition-colors ${tm.cardTitleSecondary}`}>{item[lang].name}</h3>
+                <h3 className={`font-serif text-sm md:text-xl tracking-wide leading-tight transition-colors text-[#D4AF37] drop-shadow-md`}>{item[lang].name}</h3>
                 <div className="flex items-center gap-4 mt-1">
                   <span className="text-[#D4AF37] font-black text-xs md:text-lg">{item.price} ETB</span>
                   <div className="flex items-center gap-2">
@@ -747,7 +747,7 @@ export default function Home() {
             {showModal === "cart" ? (
               <div className="flex flex-col h-full uppercase tracking-tight">
                 <div className="px-6 py-4 border-b border-[#D4AF37]/10 flex items-center justify-between">
-                  <h2 className={`text-xl font-serif ${isLightMode ? 'text-[#1A1A1A]' : 'text-[#D4AF37]'} font-black tracking-[0.2em]`}>My Order</h2>
+                  <h2 className={`text-xl font-serif text-[#D4AF37] font-black tracking-[0.2em]`}>My Order</h2>
                   <button onClick={() => setShowModal(null)} className="h-10 w-10 flex items-center justify-center rounded-full bg-white/5 text-[#D4AF37]">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
@@ -761,8 +761,8 @@ export default function Home() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start">
-                          <h4 className={`font-serif ${isLightMode ? 'text-[#1A1A1A]' : 'text-[#D4AF37]'} font-bold text-lg truncate pr-2`}>{item[lang].name}</h4>
-                          <span className={`font-black ${isLightMode ? 'text-[#1A1A1A]' : 'text-[#D4AF37]'} whitespace-nowrap`}>{item.price} ETB</span>
+                          <h4 className="font-serif text-[#D4AF37] font-bold text-lg truncate pr-2">{item[lang].name}</h4>
+                          <span className="font-black text-[#D4AF37] whitespace-nowrap">{item.price} ETB</span>
                         </div>
                         <div className="flex items-center justify-between mt-2">
                            <div className="flex items-center gap-1">
@@ -772,7 +772,7 @@ export default function Home() {
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 12H4" /></svg>
                               </button>
-                              <span className="w-10 text-center font-black text-white text-lg">{item.quantity}</span>
+                              <span className={`w-10 text-center font-black ${isLightMode ? 'text-black' : 'text-white'} text-lg`}>{item.quantity}</span>
                               <button 
                                 onClick={() => addToCart(item.id)}
                                 className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#D4AF37] text-black active:scale-90 transition-transform"
@@ -809,7 +809,7 @@ export default function Home() {
               </div>
             ) : showModal === "story" ? (
               <div className="p-8 text-center bg-[#000000]">
-                <h2 className={`text-3xl font-serif text-[#D4AF37] uppercase tracking-widest mb-6`}>{t.ourStory}</h2>
+                <h2 className="text-3xl font-serif text-[#D4AF37] uppercase tracking-widest mb-6">{t.ourStory}</h2>
                 <div className="w-12 h-[1px] border-b border-[#D4AF37]/50 mx-auto mb-6" />
                 <h3 className="text-lg text-white mb-4 italic leading-tight">{siteContent.storyTitle}</h3>
                 <p className="text-zinc-400 text-sm leading-relaxed mb-8 whitespace-pre-wrap">{siteContent.storyText}</p>
