@@ -37,9 +37,11 @@ const translations = {
     close: "Close",
     categories: {
       All: "All",
-      "Traditional Foods": "Traditional",
-      "Specialty Drinks": "Drinks",
-      "Side Dishes": "Sides",
+      "Yefisig (Meat Specialties)": "Yefisig",
+      "Yetsom (Vegan/Fasting)": "Yetsom",
+      "Soft Drinks": "Soft Drinks",
+      "Alcoholic Drinks": "Alcohol",
+      "Hot Drinks": "Hot Drinks",
       Special: "Special",
       New: "New"
     }
@@ -71,9 +73,11 @@ const translations = {
     close: "ዝጋ",
     categories: {
       All: "ሁሉንም",
-      "Traditional Foods": "ባህላዊ",
-      "Specialty Drinks": "መጠጦች",
-      "Side Dishes": "ተጨማሪዎች",
+      "Yefisig (Meat Specialties)": "የፍስክ ምግቦች",
+      "Yetsom (Vegan/Fasting)": "የጾም ምግቦች",
+      "Soft Drinks": "ቀዝቃዛ መጠጦች",
+      "Alcoholic Drinks": "የአልኮል መጠጦች",
+      "Hot Drinks": "ትኩስ መጠጦች",
       Special: "ልዩ",
       New: "አዲስ"
     }
