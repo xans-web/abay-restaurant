@@ -431,8 +431,31 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
+      {/* === FIXED DONE BANNER (appears when pending changes exist) === */}
+      {hasPendingChanges && (
+        <div className="fixed top-0 left-0 right-0 z-[1200] flex items-center justify-between px-4 md:px-8 h-[50px] bg-[#D4AF37] shadow-[0_4px_24px_rgba(212,175,55,0.5)] animate-slide-down">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.25em] text-black">
+              {Object.keys(pendingEdits).length > 0 && `${Object.keys(pendingEdits).length} item${Object.keys(pendingEdits).length > 1 ? 's' : ''} edited`}
+              {Object.keys(pendingEdits).length > 0 && Object.keys(pendingSettings).length > 0 && ' · '}
+              {Object.keys(pendingSettings).length > 0 && 'Settings changed'}
+            </span>
+          </div>
+          <button
+            onClick={handleSaveAll}
+            disabled={isSaving}
+            className="px-6 py-1.5 bg-black text-[#D4AF37] text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full shadow-md hover:bg-black/80 active:scale-95 transition-all flex items-center gap-2"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+            DONE — Save All
+          </button>
+        </div>
+      )}
+
       {/* Main Content Area */}
-      <main className={`flex-1 transition-all duration-300 min-h-[100vh] lg:${isSidebarOpen ? 'ml-64' : 'ml-20'} pt-[70px] lg:pt-0`}>
+      <main className={`flex-1 transition-all duration-300 min-h-[100vh] lg:${isSidebarOpen ? 'ml-64' : 'ml-20'} ${
+        hasPendingChanges ? 'pt-[120px] lg:pt-[50px]' : 'pt-[70px] lg:pt-0'
+      }`}>
         <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto">
           
           {/* TAB 1: DASHBOARD */}
@@ -596,7 +619,11 @@ export default function AdminDashboard() {
               {/* Mobile Card View */}
               <div className="lg:hidden space-y-4 mt-6">
                 {filteredItems.map(item => (
-                  <div key={item.id} className={`${tm.tableBg} rounded-2xl p-5 border ${tm.sidebarBorder} shadow-sm relative group overflow-hidden`}>
+                  <div key={item.id} className={`rounded-2xl p-5 border shadow-sm relative group overflow-hidden transition-all duration-300 ${
+                    dirtyItemIds.has(item.id)
+                      ? 'border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.15)] ' + tm.tableBg
+                      : `${tm.tableBg} ${tm.sidebarBorder}`
+                  }`}>
                     <div className="flex gap-6 mb-4">
                       {/* Item Image & Actions */}
                       <div className="flex flex-col gap-3 flex-shrink-0">
@@ -658,6 +685,7 @@ export default function AdminDashboard() {
                             type="number" step="0.01" 
                             value={pendingEdits[item.id]?.price ?? item.price}
                             onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                            onFocus={(e) => e.target.select()}
                             className={`bg-transparent border-b text-[#D4AF37] font-black w-24 focus:outline-none text-2xl ${
                               dirtyItemIds.has(item.id) ? 'border-[#D4AF37]' : 'border-transparent'
                             } transition-colors`}
@@ -750,7 +778,11 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody className={`divide-y ${isLightMode ? 'divide-gray-100' : 'divide-zinc-800'}`}>
                       {filteredItems.map(item => (
-                        <tr key={item.id} className={`${tm.tableRowHover} transition-colors ${selectedItems.includes(item.id) ? tm.tableRowActive : ''}`}>
+                        <tr key={item.id} className={`transition-colors ${
+                          dirtyItemIds.has(item.id)
+                            ? (isLightMode ? 'bg-[#FFFBEB] border-l-2 border-l-[#D4AF37]' : 'bg-[#D4AF37]/5 border-l-2 border-l-[#D4AF37]')
+                            : `${tm.tableRowHover} ${selectedItems.includes(item.id) ? tm.tableRowActive : ''}`
+                        }`}>
                           <td className="p-4 text-center">
                             <input 
                               type="checkbox" 
@@ -820,6 +852,7 @@ export default function AdminDashboard() {
                                 type="number" step="0.01"
                                 value={pendingEdits[item.id]?.price ?? item.price}
                                 onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                                onFocus={(e) => e.target.select()}
                                 className={`bg-transparent border-b ${tm.textAcc} font-black w-20 focus:outline-none text-base ${
                                   dirtyItemIds.has(item.id) ? 'border-[#D4AF37]' : 'border-transparent'
                                 } transition-colors`}
