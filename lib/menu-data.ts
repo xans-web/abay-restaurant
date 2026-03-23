@@ -7,6 +7,8 @@ export interface MenuItem {
   isSpecial: boolean;
   isSoldOut: boolean;
   isNew: boolean;
+  clicks?: number;
+  cartAdds?: number;
 }
 
 export interface MenuSection {

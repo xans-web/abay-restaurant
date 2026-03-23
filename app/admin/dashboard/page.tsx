@@ -470,21 +470,77 @@ export default function AdminDashboard() {
         <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto">
           
           {/* TAB 1: DASHBOARD */}
-          {activeTab === "dashboard" && (
+          {activeTab === "dashboard" && (() => {
+            const totalViews = siteContent?.totalViews || 0;
+            const allItemsFlat = menuData.flatMap(cat => cat.items);
+            const totalClicks = allItemsFlat.reduce((acc, item) => acc + (item.clicks || 0), 0);
+            const totalCartAdds = allItemsFlat.reduce((acc, item) => acc + (item.cartAdds || 0), 0);
+            
+            const topClickedItems = [...allItemsFlat].sort((a, b) => (b.clicks || 0) - (a.clicks || 0)).slice(0, 3);
+            const topCartItems = [...allItemsFlat].sort((a, b) => (b.cartAdds || 0) - (a.cartAdds || 0)).slice(0, 3);
+
+            return (
             <div className="animate-fade-in-up">
-              <h2 className={`text-xl md:text-3xl font-serif ${tm.textAcc} uppercase tracking-widest mb-6 md:mb-8 border-b ${tm.sidebarBorder} pb-4`}>Dashboard Overview</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-                <div className={`${tm.bgStats} p-6 md:p-8 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all`}>
-                  <span className={`${tm.textAcc} text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] mb-2 md:mb-4`}>Total Menu Items</span>
-                  <span className={`text-4xl md:text-6xl font-serif ${tm.textStats} font-black`}>{totalItems}</span>
+              <h2 className={`text-xl md:text-3xl font-serif ${tm.textAcc} uppercase tracking-widest mb-6 md:mb-8 border-b ${tm.sidebarBorder} pb-4`}>Analytics & Overview</h2>
+              
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-8">
+                <div className={`${tm.bgStats} p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all`}>
+                  <span className={`${tm.textAcc} text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mb-1 md:mb-2 text-center`}>Menu Items</span>
+                  <span className={`text-2xl md:text-4xl font-serif ${tm.textStats} font-black`}>{totalItems}</span>
                 </div>
-                <div className={`${tm.bgStats} p-6 md:p-8 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all`}>
-                  <span className={`${tm.textAcc} text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] mb-2 md:mb-4`}>Total Categories</span>
-                  <span className={`text-4xl md:text-6xl font-serif ${tm.textStats} font-black`}>{totalCategories}</span>
+                <div className={`${tm.bgStats} p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all`}>
+                  <span className={`${tm.textAcc} text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mb-1 md:mb-2 text-center`}>Categories</span>
+                  <span className={`text-2xl md:text-4xl font-serif ${tm.textStats} font-black`}>{totalCategories}</span>
+                </div>
+                <div className={`${tm.bgStats} p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all`}>
+                  <span className={`${tm.textAcc} text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mb-1 md:mb-2 text-center`}>Total Views</span>
+                  <span className={`text-2xl md:text-4xl font-serif ${tm.textStats} font-black`}>{totalViews}</span>
+                </div>
+                <div className={`${tm.bgStats} p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all`}>
+                  <span className={`${tm.textAcc} text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mb-1 md:mb-2 text-center`}>Item Clicks</span>
+                  <span className={`text-2xl md:text-4xl font-serif ${tm.textStats} font-black`}>{totalClicks}</span>
+                </div>
+                <div className={`${tm.bgStats} p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all md:col-span-2 lg:col-span-1`}>
+                  <span className={`${tm.textAcc} text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mb-1 md:mb-2 text-center`}>Cart Intents</span>
+                  <span className={`text-2xl md:text-4xl font-serif ${tm.textStats} font-black`}>{totalCartAdds}</span>
                 </div>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                <div className={`${tm.bgStats} p-6 md:p-8 rounded-2xl`}>
+                  <h3 className={`text-sm md:text-base font-bold uppercase tracking-[0.2em] ${tm.textAcc} mb-6 border-b border-[#D4AF37]/20 pb-2`}>Top Clicked Items</h3>
+                  <div className="space-y-4">
+                    {topClickedItems.map((item, idx) => (
+                      <div key={item.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className={`${tm.textAcc} font-bold opacity-50`}>#{idx + 1}</span>
+                          <span className={`font-serif ${tm.tableText}`}>{item.en.name}</span>
+                        </div>
+                        <span className={`px-2 py-1 rounded bg-[#D4AF37]/10 text-[#D4AF37] text-[10px] font-black`}>{item.clicks || 0} CLICKS</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={`${tm.bgStats} p-6 md:p-8 rounded-2xl`}>
+                  <h3 className={`text-sm md:text-base font-bold uppercase tracking-[0.2em] ${tm.textAcc} mb-6 border-b border-[#D4AF37]/20 pb-2`}>Top Cart Adds</h3>
+                  <div className="space-y-4">
+                    {topCartItems.map((item, idx) => (
+                      <div key={item.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className={`${tm.textAcc} font-bold opacity-50`}>#{idx + 1}</span>
+                          <span className={`font-serif ${tm.tableText}`}>{item.en.name}</span>
+                        </div>
+                        <span className={`px-2 py-1 rounded bg-[#D4AF37]/10 text-[#D4AF37] text-[10px] font-black`}>{item.cartAdds || 0} ADDS</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
             </div>
-          )}
+            );
+          })()}
 
           {/* TAB 2: MENU ITEMS */}
           {activeTab === "menu" && (

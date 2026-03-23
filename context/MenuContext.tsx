@@ -12,6 +12,7 @@ interface SiteContent {
   phone: string;
   email: string;
   logo: string;
+  totalViews?: number;
 }
 
 interface MenuContextType {

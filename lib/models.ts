@@ -14,7 +14,9 @@ const MenuItemSchema = new mongoose.Schema({
   image: { type: String, default: "" },
   isSpecial: { type: Boolean, default: false },
   isSoldOut: { type: Boolean, default: false },
-  isNew: { type: Boolean, default: false }
+  isNew: { type: Boolean, default: false },
+  clicks: { type: Number, default: 0 },
+  cartAdds: { type: Number, default: 0 }
 });
 
 const MenuSectionSchema = new mongoose.Schema({
@@ -36,7 +38,8 @@ const SettingsSchema = new mongoose.Schema({
   adminPassword: { type: String, default: 'admin123' },
   adminEmail: { type: String, default: 'admin@abayhotel.com' },
   resetOtp: { type: String, default: null },
-  resetOtpExpiry: { type: Date, default: null }
+  resetOtpExpiry: { type: Date, default: null },
+  totalViews: { type: Number, default: 0 }
 });
 
 export const MenuSection = mongoose.models.MenuSection || mongoose.model('MenuSection', MenuSectionSchema);

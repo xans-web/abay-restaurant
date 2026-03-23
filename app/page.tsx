@@ -133,6 +133,15 @@ export default function Home() {
   const [expandedDesc, setExpandedDesc] = useState<number | null>(null);
   const filterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Analytics: Record Page View on mount
+  useEffect(() => {
+    fetch('/api/analytics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'pageView' })
+    }).catch(console.error);
+  }, []);
+
   // Auto-close filter after 5s of inactivity
   useEffect(() => {
     if (showPriceFilter) {
@@ -284,6 +293,23 @@ export default function Home() {
       ...prev,
       [id]: (prev[id] || 0) + 1
     }));
+    // Analytics
+    fetch('/api/analytics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'cartAdd', itemId: id })
+    }).catch(console.error);
+  };
+
+  const handleItemClick = (id: number) => {
+    setExpandedDesc(expandedDesc === id ? null : id);
+    if (expandedDesc !== id) {
+      fetch('/api/analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'itemClick', itemId: id })
+      }).catch(console.error);
+    }
   };
 
   const removeFromCart = (id: number) => {
@@ -639,7 +665,7 @@ export default function Home() {
                       {/* Middle: Description (clamped, click to expand) */}
                       <div className="flex-1 flex items-center w-full max-w-[200px] md:max-w-[300px] min-h-0 overflow-hidden py-1">
                         <p
-                          onClick={() => setExpandedDesc(expandedDesc === item.id ? null : item.id)}
+                          onClick={() => handleItemClick(item.id)}
                           className={`${tm.cardDescColor} text-[10px] md:text-sm italic font-light leading-relaxed transition-colors cursor-pointer hover:opacity-80 w-full line-clamp-2 overflow-hidden`}
                           title="Tap to read more"
                         >{item[lang].desc}</p>
