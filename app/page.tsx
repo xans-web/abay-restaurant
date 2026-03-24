@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMenu } from "@/context/MenuContext";
 import { Sun, Moon, SlidersHorizontal, X } from "lucide-react";
-import { motion } from "framer-motion";
 
 const translations = {
   en: {
@@ -495,24 +494,27 @@ export default function Home() {
                 <>
                   {/* Backdrop to close */}
                   <div 
-                    className="fixed inset-0 z-[1050]" 
+                    className="fixed inset-0 z-[1050] bg-black/20 backdrop-blur-[2px]" 
                     onClick={() => setShowPriceFilter(false)} 
                   />
-                  <div className={`absolute right-0 top-[calc(100%+12px)] z-[1060] w-[90vw] max-w-[340px] rounded-2xl border border-[#D4AF37]/30 ${
+                  <div className={`fixed left-1/2 -translate-x-1/2 top-[85px] z-[1060] w-[92%] max-w-md rounded-3xl border border-[#D4AF37]/30 ${
                     isLightMode 
-                      ? 'bg-white/95 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.12),0_0_0_1px_rgba(212,175,55,0.1)]' 
-                      : 'bg-[#0A0A0A]/95 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.8)]'
-                  } p-5 animate-price-filter-in`}>
-                    {/* Gold notch arrow */}
-                    <div className="absolute -top-2 right-4 w-4 h-4 rotate-45 border-l border-t border-[#D4AF37]/30" style={{ background: isLightMode ? 'rgba(255,255,255,0.95)' : 'rgba(10,10,10,0.95)' }} />
+                      ? 'bg-white/95 backdrop-blur-2xl shadow-[0_25px_70px_rgba(0,0,0,0.15),0_0_0_1px_rgba(212,175,55,0.1)]' 
+                      : 'bg-[#0A0A0A]/95 backdrop-blur-2xl shadow-[0_25px_70px_rgba(0,0,0,0.9)]'
+                  } p-6 md:p-8 animate-price-filter-in`}>
+                    {/* Centered Gold notch arrow */}
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 border-l border-t border-[#D4AF37]/30" style={{ background: isLightMode ? 'rgba(255,255,255,0.95)' : 'rgba(10,10,10,0.95)' }} />
                     
-                    <div className="flex items-center justify-between mb-4">
-                      <span className={`text-[10px] uppercase tracking-[0.3em] font-black ${isLightMode ? 'text-gray-400' : 'text-white/40'}`}>Max Price</span>
-                      <span className="text-lg font-black text-[#D4AF37] font-serif">{priceLimit} ETB</span>
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex flex-col">
+                        <span className={`text-[10px] uppercase tracking-[0.4em] font-black ${isLightMode ? 'text-gray-400' : 'text-white/40'}`}>Price Range</span>
+                        <span className={`text-[8px] uppercase tracking-[0.2em] font-serif italic ${isLightMode ? 'text-gray-300' : 'text-white/20'}`}>Filter by Budget</span>
+                      </div>
+                      <span className="text-2xl font-black text-[#D4AF37] font-serif">{priceLimit} <small className="text-[10px] tracking-widest">ETB</small></span>
                     </div>
                     
                     {/* Sleek Range Slider */}
-                    <div className="relative mb-2">
+                    <div className="relative mb-4 px-2">
                       <input 
                         type="range" 
                         min={minPrice} 
@@ -522,11 +524,18 @@ export default function Home() {
                         className="price-range-slider w-full"
                         style={{ '--progress': `${maxPrice > minPrice ? ((priceLimit - minPrice) / (maxPrice - minPrice)) * 100 : 0}%` } as React.CSSProperties}
                       />
-                      <div className="flex justify-between mt-2">
-                        <span className={`text-[9px] font-bold ${isLightMode ? 'text-gray-400' : 'text-white/20'}`}>{minPrice} ETB</span>
-                        <span className={`text-[9px] font-bold ${isLightMode ? 'text-gray-400' : 'text-white/20'}`}>{maxPrice} ETB</span>
+                      <div className="flex justify-between mt-4">
+                        <span className={`text-[10px] font-bold tracking-tighter ${isLightMode ? 'text-gray-400' : 'text-white/30'}`}>{minPrice} ETB</span>
+                        <span className={`text-[10px] font-bold tracking-tighter ${isLightMode ? 'text-gray-400' : 'text-white/30'}`}>{maxPrice} ETB</span>
                       </div>
                     </div>
+
+                    <button 
+                      onClick={() => setShowPriceFilter(false)}
+                      className="w-full mt-4 py-3 rounded-xl bg-[#D4AF37] text-black font-black uppercase tracking-[0.2em] text-[10px] active:scale-95 transition-all shadow-lg"
+                    >
+                      Apply Filter
+                    </button>
                   </div>
                 </>
               )}
@@ -658,7 +667,7 @@ export default function Home() {
         </section>
 
         {/* Main Grid */}
-        <div className="space-y-16 md:space-y-24 snap-y snap-proximity">
+        <div className="space-y-16 md:space-y-24">
           {filteredMenuData.map((section) => (
             <section key={section.category} className="">
               <div className="flex items-center gap-3 mb-10">
@@ -669,30 +678,15 @@ export default function Home() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
                 {section.items.map((item) => (
-                  <motion.article 
+                  <article 
                     key={item.id} 
-                    initial={{ scale: 1, opacity: 0.9 }}
-                    whileInView={{ 
-                      scale: 1.05, 
-                      opacity: 1,
-                      filter: "brightness(1.05)",
-                    }}
-                    viewport={{ amount: 0.8, margin: "0px 0px -10% 0px" }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className={`relative flex items-center justify-center w-full max-w-[340px] md:max-w-[700px] mx-auto h-36 md:h-48 my-6 md:my-10 translate-x-2 md:translate-x-4 snap-center snap-always ${
+                    className={`relative flex items-center justify-center w-full max-w-[340px] md:max-w-[700px] mx-auto h-36 md:h-48 my-6 md:my-10 translate-x-2 md:translate-x-4 ${
                       item.isSoldOut ? 'opacity-50 grayscale contrast-75' : ''
                     }`}
                   >
                     {/* Floating Circular Image Layer (Offset Left) */}
                     <div className="absolute -left-4 md:-left-8 w-44 h-44 md:w-60 md:h-60 flex-shrink-0 z-30 transition-transform duration-500 group-hover:scale-105">
-                      <motion.div 
-                        whileInView={{ 
-                          boxShadow: isLightMode 
-                            ? "0 20px 60px rgba(0,0,0,0.2), 0 0 20px rgba(212,175,55,0.2)" 
-                            : "0 25px 70px rgba(0,0,0,0.9), 0 0 30px rgba(212,175,55,0.3)" 
-                        }}
-                        className={`relative w-full h-full rounded-full overflow-hidden border-2 border-[#D4AF37] ${isLightMode ? 'shadow-[0_12px_40px_rgba(0,0,0,0.15)]' : 'shadow-[0_20px_50px_rgba(0,0,0,0.8)]'} bg-[#000000]`}
-                      >
+                      <div className={`relative w-full h-full rounded-full overflow-hidden border-2 border-[#D4AF37] ${isLightMode ? 'shadow-[0_12px_40px_rgba(0,0,0,0.15)]' : 'shadow-[0_20px_50px_rgba(0,0,0,0.8)]'} bg-[#000000]`}>
                       {item.image ? (
                         <SafeImage 
                           src={item.image} 
@@ -705,7 +699,7 @@ export default function Home() {
                           <span className={`${tm.textAcc} font-serif text-5xl opacity-40`}>{item[lang].name.charAt(0)}</span>
                         </div>
                       )}
-                      </motion.div>
+                      </div>
                       
                       {/* Tags inside floating circle */}
                       <div className="absolute top-6 left-6 flex flex-col gap-1 z-40">
@@ -723,14 +717,7 @@ export default function Home() {
                     </div>
 
                     {/* Symmetrical Structured Frame Layer */}
-                    <motion.div 
-                      whileInView={{ 
-                        boxShadow: isLightMode 
-                          ? "0 15px 40px rgba(0,0,0,0.08)" 
-                          : "0 20px 50px rgba(0,0,0,0.6)"
-                      }}
-                      className={`w-full h-full ${tm.cardFrameBg} rounded-3xl border ${tm.cardFrameBorder} ${tm.cardFrameHoverBorder} pl-40 md:pl-56 pr-4 md:pr-12 py-3 md:py-6 flex flex-col items-center justify-between text-center relative overflow-hidden ${tm.cardFrameShadow} ${tm.cardFrameHoverShadow} transition-all duration-500`}
-                    >
+                    <div className={`w-full h-full ${tm.cardFrameBg} rounded-3xl border ${tm.cardFrameBorder} ${tm.cardFrameHoverBorder} pl-40 md:pl-56 pr-4 md:pr-12 py-3 md:py-6 flex flex-col items-center justify-between text-center relative overflow-hidden ${tm.cardFrameShadow} ${tm.cardFrameHoverShadow} transition-all duration-500`}>
                       {/* Top: Name & Price */}
                       <div className="flex-shrink-0 w-full max-w-[200px] md:max-w-[300px]">
                         <h3 className={`text-lg md:text-3xl font-serif font-black ${tm.cardTitleColor} transition-colors leading-tight break-words line-clamp-1`}>{item[lang].name}</h3>
@@ -739,16 +726,11 @@ export default function Home() {
 
                       {/* Middle: Description (clamped, click to expand) */}
                       <div className="flex-1 flex items-center w-full max-w-[200px] md:max-w-[300px] min-h-0 overflow-hidden py-1">
-                        <motion.p
+                        <p
                           onClick={() => handleItemClick(item.id)}
-                          whileInView={{ 
-                            opacity: 1, 
-                            fontWeight: 500,
-                            color: isLightMode ? "#1a1a1a" : "#D4AF37"
-                          }}
-                          className={`${tm.cardDescColor} text-[10px] md:text-sm italic font-light leading-relaxed transition-colors cursor-pointer hover:opacity-80 w-full line-clamp-2 overflow-hidden opacity-60`}
+                          className={`${tm.cardDescColor} text-[10px] md:text-sm italic font-light leading-relaxed transition-colors cursor-pointer hover:opacity-80 w-full line-clamp-2 overflow-hidden`}
                           title="Tap to read more"
-                        >{item[lang].desc}</motion.p>
+                        >{item[lang].desc}</p>
                       </div>
 
                       {/* Bottom: ADD button (always anchored) */}
@@ -785,8 +767,8 @@ export default function Home() {
                           )}
                         </div>
                       </div>
-                    </motion.div>
-                  </motion.article>
+                    </div>
+                  </article>
                 ))}
               </div>
             </section>
