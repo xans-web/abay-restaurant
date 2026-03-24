@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMenu } from "@/context/MenuContext";
 import { Sun, Moon, SlidersHorizontal, X } from "lucide-react";
+import { motion } from "framer-motion";
 
 const translations = {
   en: {
@@ -657,7 +658,7 @@ export default function Home() {
         </section>
 
         {/* Main Grid */}
-        <div className="space-y-16 md:space-y-24">
+        <div className="space-y-16 md:space-y-24 snap-y snap-proximity">
           {filteredMenuData.map((section) => (
             <section key={section.category} className="">
               <div className="flex items-center gap-3 mb-10">
@@ -668,15 +669,30 @@ export default function Home() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
                 {section.items.map((item) => (
-                  <article 
+                  <motion.article 
                     key={item.id} 
-                    className={`relative flex items-center justify-center w-full max-w-[340px] md:max-w-[700px] mx-auto h-36 md:h-48 my-6 md:my-10 translate-x-2 md:translate-x-4 ${
+                    initial={{ scale: 1, opacity: 0.9 }}
+                    whileInView={{ 
+                      scale: 1.05, 
+                      opacity: 1,
+                      filter: "brightness(1.05)",
+                    }}
+                    viewport={{ amount: 0.8, margin: "0px 0px -10% 0px" }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className={`relative flex items-center justify-center w-full max-w-[340px] md:max-w-[700px] mx-auto h-36 md:h-48 my-6 md:my-10 translate-x-2 md:translate-x-4 snap-center snap-always ${
                       item.isSoldOut ? 'opacity-50 grayscale contrast-75' : ''
                     }`}
                   >
                     {/* Floating Circular Image Layer (Offset Left) */}
                     <div className="absolute -left-4 md:-left-8 w-44 h-44 md:w-60 md:h-60 flex-shrink-0 z-30 transition-transform duration-500 group-hover:scale-105">
-                      <div className={`relative w-full h-full rounded-full overflow-hidden border-2 border-[#D4AF37] ${isLightMode ? 'shadow-[0_12px_40px_rgba(0,0,0,0.15)]' : 'shadow-[0_20px_50px_rgba(0,0,0,0.8)]'} bg-[#000000]`}>
+                      <motion.div 
+                        whileInView={{ 
+                          boxShadow: isLightMode 
+                            ? "0 20px 60px rgba(0,0,0,0.2), 0 0 20px rgba(212,175,55,0.2)" 
+                            : "0 25px 70px rgba(0,0,0,0.9), 0 0 30px rgba(212,175,55,0.3)" 
+                        }}
+                        className={`relative w-full h-full rounded-full overflow-hidden border-2 border-[#D4AF37] ${isLightMode ? 'shadow-[0_12px_40px_rgba(0,0,0,0.15)]' : 'shadow-[0_20px_50px_rgba(0,0,0,0.8)]'} bg-[#000000]`}
+                      >
                       {item.image ? (
                         <SafeImage 
                           src={item.image} 
@@ -689,7 +705,7 @@ export default function Home() {
                           <span className={`${tm.textAcc} font-serif text-5xl opacity-40`}>{item[lang].name.charAt(0)}</span>
                         </div>
                       )}
-                      </div>
+                      </motion.div>
                       
                       {/* Tags inside floating circle */}
                       <div className="absolute top-6 left-6 flex flex-col gap-1 z-40">
@@ -707,7 +723,14 @@ export default function Home() {
                     </div>
 
                     {/* Symmetrical Structured Frame Layer */}
-                    <div className={`w-full h-full ${tm.cardFrameBg} rounded-3xl border ${tm.cardFrameBorder} ${tm.cardFrameHoverBorder} pl-40 md:pl-56 pr-4 md:pr-12 py-3 md:py-6 flex flex-col items-center justify-between text-center relative overflow-hidden ${tm.cardFrameShadow} ${tm.cardFrameHoverShadow} transition-all duration-500`}>
+                    <motion.div 
+                      whileInView={{ 
+                        boxShadow: isLightMode 
+                          ? "0 15px 40px rgba(0,0,0,0.08)" 
+                          : "0 20px 50px rgba(0,0,0,0.6)"
+                      }}
+                      className={`w-full h-full ${tm.cardFrameBg} rounded-3xl border ${tm.cardFrameBorder} ${tm.cardFrameHoverBorder} pl-40 md:pl-56 pr-4 md:pr-12 py-3 md:py-6 flex flex-col items-center justify-between text-center relative overflow-hidden ${tm.cardFrameShadow} ${tm.cardFrameHoverShadow} transition-all duration-500`}
+                    >
                       {/* Top: Name & Price */}
                       <div className="flex-shrink-0 w-full max-w-[200px] md:max-w-[300px]">
                         <h3 className={`text-lg md:text-3xl font-serif font-black ${tm.cardTitleColor} transition-colors leading-tight break-words line-clamp-1`}>{item[lang].name}</h3>
@@ -716,11 +739,16 @@ export default function Home() {
 
                       {/* Middle: Description (clamped, click to expand) */}
                       <div className="flex-1 flex items-center w-full max-w-[200px] md:max-w-[300px] min-h-0 overflow-hidden py-1">
-                        <p
+                        <motion.p
                           onClick={() => handleItemClick(item.id)}
-                          className={`${tm.cardDescColor} text-[10px] md:text-sm italic font-light leading-relaxed transition-colors cursor-pointer hover:opacity-80 w-full line-clamp-2 overflow-hidden`}
+                          whileInView={{ 
+                            opacity: 1, 
+                            fontWeight: 500,
+                            color: isLightMode ? "#1a1a1a" : "#D4AF37"
+                          }}
+                          className={`${tm.cardDescColor} text-[10px] md:text-sm italic font-light leading-relaxed transition-colors cursor-pointer hover:opacity-80 w-full line-clamp-2 overflow-hidden opacity-60`}
                           title="Tap to read more"
-                        >{item[lang].desc}</p>
+                        >{item[lang].desc}</motion.p>
                       </div>
 
                       {/* Bottom: ADD button (always anchored) */}
@@ -757,8 +785,8 @@ export default function Home() {
                           )}
                         </div>
                       </div>
-                    </div>
-                  </article>
+                    </motion.div>
+                  </motion.article>
                 ))}
               </div>
             </section>
