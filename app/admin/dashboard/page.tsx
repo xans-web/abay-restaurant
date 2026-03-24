@@ -19,7 +19,8 @@ export default function AdminDashboard() {
     addCategory, 
     renameCategory, 
     deleteCategory,
-    updateSiteContent
+    updateSiteContent,
+    refreshData
   } = useMenu();
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -137,6 +138,16 @@ export default function AdminDashboard() {
     modalOverlay: "bg-black/80",
     modalBg: "bg-zinc-950 shadow-[0_0_50px_rgba(212,175,55,0.15)] border border-[#D4AF37]/30"
   };
+
+  // Real-time polling for analytics (10 seconds)
+  useEffect(() => {
+    if (activeTab === "dashboard") {
+      const interval = setInterval(() => {
+        refreshData();
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab, refreshData]);
 
   useEffect(() => {
     if (localStorage.getItem("admin_authenticated") !== "true") {
@@ -472,6 +483,7 @@ export default function AdminDashboard() {
           {/* TAB 1: DASHBOARD */}
           {activeTab === "dashboard" && (() => {
             const totalViews = siteContent?.totalViews || 0;
+            const dailyViews = siteContent?.dailyViews || 0;
             const allItemsFlat = menuData.flatMap(cat => cat.items);
             const totalClicks = allItemsFlat.reduce((acc, item) => acc + (item.clicks || 0), 0);
             const totalCartAdds = allItemsFlat.reduce((acc, item) => acc + (item.cartAdds || 0), 0);
@@ -481,8 +493,39 @@ export default function AdminDashboard() {
 
             return (
             <div className="animate-fade-in-up">
-              <h2 className={`text-xl md:text-3xl font-serif ${tm.textAcc} uppercase tracking-widest mb-6 md:mb-8 border-b ${tm.sidebarBorder} pb-4`}>Analytics & Overview</h2>
+              <div className="flex items-center justify-between mb-6 md:mb-8 border-b border-[#D4AF37]/20 pb-4">
+                <h2 className={`text-xl md:text-3xl font-serif ${tm.textAcc} uppercase tracking-widest`}>Analytics & Overview</h2>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Live Updates</span>
+                </div>
+              </div>
               
+              {/* REAL-TIME TRAFFIC COUNTERS */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-8">
+                <div className={`${tm.bgStats} p-8 rounded-3xl border border-[#D4AF37]/20 flex flex-col items-center justify-center relative overflow-hidden group transition-all`}>
+                  <div className="flex flex-col items-center gap-1 mb-4 text-center">
+                    <span className={`${tm.textAcc} text-[10px] md:text-xs font-bold uppercase tracking-[0.3em]`}>Daily Menu Views</span>
+                    <span className={`${tm.textMuted} text-[10px] md:text-xs font-serif italic`}>(የዛሬ የሜኑ እይታዎች)</span>
+                  </div>
+                  <span className={`text-5xl md:text-7xl font-serif ${tm.textStats} font-black`}>{dailyViews}</span>
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <svg className="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" /></svg>
+                  </div>
+                </div>
+
+                <div className={`${tm.bgStats} p-8 rounded-3xl border border-[#D4AF37]/20 flex flex-col items-center justify-center relative overflow-hidden group transition-all`}>
+                  <div className="flex flex-col items-center gap-1 mb-4 text-center">
+                    <span className={`${tm.textAcc} text-[10px] md:text-xs font-bold uppercase tracking-[0.3em]`}>Total Lifetime Views</span>
+                    <span className={`${tm.textMuted} text-[10px] md:text-xs font-serif italic`}>(ጠቅላላ የሜኑ እይታዎች)</span>
+                  </div>
+                  <span className={`text-5xl md:text-7xl font-serif ${tm.textStats} font-black`}>{totalViews}</span>
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <svg className="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M11.5 2C6.81 2 3 5.81 3 10.5S6.81 19 11.5 19h.5v3c4.86-2.36 8-6.64 8-11.5C20 5.81 16.19 2 11.5 2zm0 14.5c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" /></svg>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-8">
                 <div className={`${tm.bgStats} p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all`}>
                   <span className={`${tm.textAcc} text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mb-1 md:mb-2 text-center`}>Menu Items</span>
@@ -493,16 +536,16 @@ export default function AdminDashboard() {
                   <span className={`text-2xl md:text-4xl font-serif ${tm.textStats} font-black`}>{totalCategories}</span>
                 </div>
                 <div className={`${tm.bgStats} p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all`}>
-                  <span className={`${tm.textAcc} text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mb-1 md:mb-2 text-center`}>Total Views</span>
-                  <span className={`text-2xl md:text-4xl font-serif ${tm.textStats} font-black`}>{totalViews}</span>
-                </div>
-                <div className={`${tm.bgStats} p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all`}>
                   <span className={`${tm.textAcc} text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mb-1 md:mb-2 text-center`}>Item Clicks</span>
                   <span className={`text-2xl md:text-4xl font-serif ${tm.textStats} font-black`}>{totalClicks}</span>
                 </div>
                 <div className={`${tm.bgStats} p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all md:col-span-2 lg:col-span-1`}>
                   <span className={`${tm.textAcc} text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mb-1 md:mb-2 text-center`}>Cart Intents</span>
                   <span className={`text-2xl md:text-4xl font-serif ${tm.textStats} font-black`}>{totalCartAdds}</span>
+                </div>
+                <div className={`${tm.bgStats} p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all md:col-span-2 lg:col-span-1`}>
+                  <span className={`${tm.textAcc} text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] mb-1 md:mb-2 text-center`}>Active Tab</span>
+                  <span className={`text-xs md:text-sm font-serif ${tm.textStats} font-black uppercase text-center`}>Dashboard</span>
                 </div>
               </div>
 

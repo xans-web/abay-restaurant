@@ -39,7 +39,9 @@ const SettingsSchema = new mongoose.Schema({
   adminEmail: { type: String, default: 'admin@abayhotel.com' },
   resetOtp: { type: String, default: null },
   resetOtpExpiry: { type: Date, default: null },
-  totalViews: { type: Number, default: 0 }
+  totalViews: { type: Number, default: 0 },
+  dailyViews: { type: Number, default: 0 },
+  lastViewReset: { type: String, default: "" }
 });
 
 export const MenuSection = mongoose.models.MenuSection || mongoose.model('MenuSection', MenuSectionSchema);

@@ -10,7 +10,26 @@ export async function POST(req: Request) {
     await connectToDatabase();
 
     if (action === "pageView") {
-      await Settings.findByIdAndUpdate("global", { $inc: { totalViews: 1 } }, { upsert: true });
+      const settings = await Settings.findById("global");
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+      if (!settings || settings.lastViewReset !== today) {
+        // First view of the day or first time ever
+        await Settings.findByIdAndUpdate(
+          "global", 
+          { 
+            $inc: { totalViews: 1 },
+            $set: { dailyViews: 1, lastViewReset: today }
+          }, 
+          { upsert: true }
+        );
+      } else {
+        // Same day increment
+        await Settings.findByIdAndUpdate(
+          "global", 
+          { $inc: { totalViews: 1, dailyViews: 1 } }
+        );
+      }
       return NextResponse.json({ success: true });
     }
 
