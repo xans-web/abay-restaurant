@@ -131,6 +131,11 @@ export default function Home() {
   const [priceLimit, setPriceLimit] = useState(30);
   const [showPriceFilter, setShowPriceFilter] = useState(false);
   const [expandedDesc, setExpandedDesc] = useState<number | null>(null);
+  
+  // Animation State
+  const [flyingItems, setFlyingItems] = useState<{ id: string, image: string, startX: number, startY: number, endX: number, endY: number, active: boolean }[]>([]);
+  const [cartPulse, setCartPulse] = useState(false);
+  
   const filterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Analytics: Record Page View on mount
@@ -288,7 +293,7 @@ export default function Home() {
     cardDivider: "border-[#D4AF37]/10"
   };
 
-  const addToCart = (id: number) => {
+  const addToCart = (id: number, e?: React.MouseEvent) => {
     setCart(prev => ({
       ...prev,
       [id]: (prev[id] || 0) + 1
@@ -299,6 +304,38 @@ export default function Home() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'cartAdd', itemId: id })
     }).catch(console.error);
+
+    // Fly-to-Cart Animation
+    if (e && typeof window !== "undefined") {
+      const item = menuData.flatMap(c => c.items).find(i => i.id === id);
+      if (item && item.image) {
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const cartBtn = document.getElementById("cart-btn");
+        
+        if (cartBtn) {
+          const rect = cartBtn.getBoundingClientRect();
+          const endX = rect.left + rect.width / 2;
+          const endY = rect.top + rect.height / 2;
+          
+          const flyId = Math.random().toString(36).substring(7);
+          
+          setFlyingItems(prev => [...prev, { id: flyId, image: item.image, startX, startY, endX, endY, active: false }]);
+          
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              setFlyingItems(prev => prev.map(f => f.id === flyId ? { ...f, active: true } : f));
+            });
+          });
+
+          setTimeout(() => {
+            setFlyingItems(prev => prev.filter(f => f.id !== flyId));
+            setCartPulse(true);
+            setTimeout(() => setCartPulse(false), 300);
+          }, 600);
+        }
+      }
+    }
   };
 
   const handleItemClick = (id: number) => {
@@ -684,7 +721,7 @@ export default function Home() {
                               </button>
                               <span className={`text-[11px] font-black px-1 ${isLightMode ? 'text-[#1A1A1A]' : 'text-[#D4AF37]'}`}>{cart[item.id]}</span>
                               <button 
-                                onClick={() => addToCart(item.id)}
+                                onClick={(e) => addToCart(item.id, e)}
                                 className={`px-3 h-6 flex items-center justify-center rounded-md text-[10px] font-black border border-[#D4AF37] bg-[#D4AF37] text-black hover:scale-110 transition-transform uppercase tracking-tighter`}
                               >
                                 ADD
@@ -694,7 +731,7 @@ export default function Home() {
                           {!cart[item.id] && (
                             <button 
                               disabled={item.isSoldOut}
-                              onClick={() => addToCart(item.id)}
+                              onClick={(e) => addToCart(item.id, e)}
                               className={`flex items-center justify-center gap-2 px-5 py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${
                                 item.isSoldOut ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-[#D4AF37] text-black hover:scale-105 active:scale-95 shadow-lg shadow-[#D4AF37]/20'
                               }`}
@@ -713,6 +750,30 @@ export default function Home() {
           ))}
         </div>
       </main>
+
+      {/* Fly-to-Cart Animation Layer */}
+      <div className="fixed inset-0 pointer-events-none z-[2000] overflow-hidden">
+        {flyingItems.map((f) => (
+          <div
+            key={f.id}
+            className="absolute rounded-full overflow-hidden border-2 border-[#D4AF37] bg-black shadow-xl"
+            style={{
+              width: '80px',
+              height: '80px',
+              left: 0,
+              top: 0,
+              willChange: 'transform, opacity',
+              transition: f.active ? 'all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1)' : 'none',
+              opacity: f.active ? 0 : 0.7,
+              transform: f.active 
+                ? `translate(${f.endX - 40}px, ${f.endY - 40}px) scale(0.2)` 
+                : `translate(${f.startX - 40}px, ${f.startY - 40}px) scale(1)`,
+            }}
+          >
+            <img src={f.image} className="w-full h-full object-cover" alt="Flying item" />
+          </div>
+        ))}
+      </div>
 
       {/* Expanded Description Popup */}
       {expandedDesc !== null && (() => {
@@ -745,8 +806,9 @@ export default function Home() {
       {/* Floating Cart Button (Mobile Optimized) */}
       <div className={`fixed bottom-0 left-0 right-0 p-6 z-[950] transition-all duration-700 pointer-events-none lg:px-12 ${cartItemCount > 0 ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0'}`}>
         <button 
+          id="cart-btn"
           onClick={() => setShowModal("cart")}
-          className={`mx-auto bg-[#D4AF37] text-black px-8 py-4 rounded-full font-black uppercase tracking-[0.2em] text-sm shadow-[0_12px_40px_rgba(0,0,0,0.8)] border-2 border-[#D4AF37] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 pointer-events-auto w-full max-w-md md:w-auto relative overflow-hidden group`}
+          className={`mx-auto bg-[#D4AF37] text-black px-8 py-4 rounded-full font-black uppercase tracking-[0.2em] text-sm shadow-[0_12px_40px_rgba(0,0,0,0.8)] border-2 border-[#D4AF37] hover:scale-105 active:scale-95 flex items-center justify-center gap-3 pointer-events-auto w-full max-w-md md:w-auto relative overflow-hidden group ${cartPulse ? 'scale-110 shadow-[0_0_40px_rgba(212,175,55,0.8)]' : 'transition-all'}`}
         >
           <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
