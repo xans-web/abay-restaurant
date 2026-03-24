@@ -492,29 +492,29 @@ export default function Home() {
               {/* Mobile Price Filter Dropdown Overlay */}
               {showPriceFilter && (
                 <>
-                  {/* Backdrop to close */}
+                  {/* Transparent Backdrop to close */}
                   <div 
-                    className="fixed inset-0 z-[1050] bg-black/20 backdrop-blur-[2px]" 
+                    className="fixed inset-0 z-[1050] bg-transparent" 
                     onClick={() => setShowPriceFilter(false)} 
                   />
-                  <div className={`fixed left-1/2 -translate-x-1/2 top-[85px] z-[1060] w-[92%] max-w-md rounded-3xl border border-[#D4AF37]/30 ${
+                  <div className={`fixed left-1/2 -translate-x-1/2 top-[85px] z-[1060] w-[92%] max-w-md rounded-3xl border border-[#D4AF37]/40 ${
                     isLightMode 
-                      ? 'bg-white/95 backdrop-blur-2xl shadow-[0_25px_70px_rgba(0,0,0,0.15),0_0_0_1px_rgba(212,175,55,0.1)]' 
-                      : 'bg-[#0A0A0A]/95 backdrop-blur-2xl shadow-[0_25px_70px_rgba(0,0,0,0.9)]'
+                      ? 'bg-white shadow-[0_20px_50px_rgba(0,0,0,0.15)]' 
+                      : 'bg-[#0A0A0A] shadow-[0_20px_60px_rgba(0,0,0,0.9)]'
                   } p-6 md:p-8 animate-price-filter-in`}>
                     {/* Centered Gold notch arrow */}
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 border-l border-t border-[#D4AF37]/30" style={{ background: isLightMode ? 'rgba(255,255,255,0.95)' : 'rgba(10,10,10,0.95)' }} />
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 border-l border-t border-[#D4AF37]/40" style={{ background: isLightMode ? '#FFFFFF' : '#0A0A0A' }} />
                     
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex flex-col">
                         <span className={`text-[10px] uppercase tracking-[0.4em] font-black ${isLightMode ? 'text-gray-400' : 'text-white/40'}`}>Price Range</span>
-                        <span className={`text-[8px] uppercase tracking-[0.2em] font-serif italic ${isLightMode ? 'text-gray-300' : 'text-white/20'}`}>Filter by Budget</span>
+                        <span className={`text-[8px] uppercase tracking-[0.2em] font-serif italic ${isLightMode ? 'text-gray-300' : 'text-white/20'}`}>Live Filtering</span>
                       </div>
                       <span className="text-2xl font-black text-[#D4AF37] font-serif">{priceLimit} <small className="text-[10px] tracking-widest">ETB</small></span>
                     </div>
                     
                     {/* Sleek Range Slider */}
-                    <div className="relative mb-4 px-2">
+                    <div className="relative mb-2 px-2">
                       <input 
                         type="range" 
                         min={minPrice} 
@@ -529,13 +529,6 @@ export default function Home() {
                         <span className={`text-[10px] font-bold tracking-tighter ${isLightMode ? 'text-gray-400' : 'text-white/30'}`}>{maxPrice} ETB</span>
                       </div>
                     </div>
-
-                    <button 
-                      onClick={() => setShowPriceFilter(false)}
-                      className="w-full mt-4 py-3 rounded-xl bg-[#D4AF37] text-black font-black uppercase tracking-[0.2em] text-[10px] active:scale-95 transition-all shadow-lg"
-                    >
-                      Apply Filter
-                    </button>
                   </div>
                 </>
               )}
