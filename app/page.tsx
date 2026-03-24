@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMenu } from "@/context/MenuContext";
 import { Sun, Moon, SlidersHorizontal, X } from "lucide-react";
@@ -124,6 +125,7 @@ const SafeImage = ({ src, alt, fill, ...props }: any) => {
 };
 
 export default function Home() {
+  const router = useRouter();
   const { menuData, siteContent, refreshData } = useMenu();
   const [lang, setLang] = useState<"en" | "am">("en");
   const [isLightMode, setIsLightMode] = useState(false);
@@ -137,6 +139,7 @@ export default function Home() {
   const [cartPulse, setCartPulse] = useState(false);
   
   const filterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Analytics: Record Page View on mount
   useEffect(() => {
@@ -379,6 +382,18 @@ export default function Home() {
 
   const formattedTotal = `${cartTotal.toLocaleString()} ETB`;
 
+  const handleLongPressStart = () => {
+    longPressTimerRef.current = setTimeout(() => {
+      router.push("/admin");
+    }, 5000);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
 
   const cartItemCount = Object.values(cart).reduce((a, b) => a + b, 0);
 
@@ -934,15 +949,17 @@ export default function Home() {
 
       <footer className={`mt-32 py-20 border-t ${tm.borderMain} relative overflow-hidden ${tm.footerBg} transition-colors duration-500`}>
         <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
-          <h2 className={`text-3xl font-serif ${tm.textAcc} mb-6 tracking-tighter font-bold uppercase`}>{siteContent.hotelName}</h2>
+          <h2 
+            onPointerDown={handleLongPressStart}
+            onPointerUp={handleLongPressEnd}
+            onPointerLeave={handleLongPressEnd}
+            className={`text-3xl font-serif ${tm.textAcc} mb-6 tracking-tighter font-bold uppercase select-none cursor-default`}
+          >
+            {siteContent.hotelName}
+          </h2>
           <div className={`flex justify-center gap-6 ${tm.textMuted} text-[9px] tracking-[0.3em] uppercase font-black`}>
             <button onClick={() => setShowModal("story")} className={`hover:${tm.textAcc} transition-all`}>Our Story</button>
             <button onClick={() => setShowModal("contact")} className={`hover:${tm.textAcc} transition-all`}>Contact</button>
-            <Link href="/admin" className="opacity-40 hover:opacity-100 transition-opacity">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-              </svg>
-            </Link>
           </div>
         </div>
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none tilet-pattern" />
