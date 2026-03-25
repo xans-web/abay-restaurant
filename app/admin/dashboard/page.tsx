@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMenu } from "@/context/MenuContext";
 import { MenuItem } from "@/lib/menu-data";
-import { Sun, Moon, Upload, Link, Trash2 } from "lucide-react";
+import { Sun, Moon, Upload, Link, Trash2, Printer } from "lucide-react";
 
 type Tab = "dashboard" | "menu" | "categories" | "settings";
 
@@ -493,12 +493,22 @@ export default function AdminDashboard() {
 
             return (
             <div className="animate-fade-in-up">
-              <div className="flex items-center justify-between mb-6 md:mb-8 border-b border-[#D4AF37]/20 pb-4">
-                <h2 className={`text-xl md:text-3xl font-serif ${tm.textAcc} uppercase tracking-widest`}>Analytics & Overview</h2>
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Live Updates</span>
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 border-b border-[#D4AF37]/20 pb-4 gap-4">
+                <div className="flex flex-col">
+                  <h2 className={`text-xl md:text-3xl font-serif ${tm.textAcc} uppercase tracking-widest`}>Analytics & Overview</h2>
+                  <div className="flex items-center gap-2 mt-2 px-3 py-1 w-fit rounded-full bg-green-500/10 border border-green-500/20">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Live Updates</span>
+                  </div>
                 </div>
+                
+                <button
+                  onClick={() => window.open('/admin/print-menu', '_blank')}
+                  className={`px-6 py-3 bg-[#D4AF37] ${isLightMode ? 'text-white' : 'text-black'} text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 border border-[#D4AF37]`}
+                >
+                  <Printer className="w-4 h-4" />
+                  Generate Print Menu
+                </button>
               </div>
               
               {/* REAL-TIME TRAFFIC COUNTERS */}
