@@ -1,34 +1,20 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
 import connectToDatabase from '@/lib/db';
 import { MenuSection } from '@/lib/models';
 import { revalidatePath } from 'next/cache';
 
-const MENU_FILE = path.join(process.cwd(), 'menu.json');
-
-// Auto-migrate function
-async function ensureMigration() {
-  await connectToDatabase();
-  const count = await MenuSection.countDocuments();
-  if (count === 0) {
-    try {
-      const data = JSON.parse(await fs.readFile(MENU_FILE, 'utf-8'));
-      if (Array.isArray(data) && data.length > 0) {
-        await MenuSection.insertMany(data);
-      }
-    } catch (e) {
-      console.error('Migration failed:', e);
-    }
-  }
-}
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    await ensureMigration();
+    await connectToDatabase();
     // Use select to omit internal Mongo fields that the frontend doesn't need
     const menu = await MenuSection.find({}).select('-_id -__v -items._id').lean();
-    return NextResponse.json(menu);
+    return NextResponse.json(menu, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0, must-revalidate',
+      },
+    });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to read menu data' }, { status: 500 });
   }
@@ -113,10 +99,10 @@ export async function PUT(request: Request) {
 
     await MenuSection.deleteMany({});
     if (menu.length > 0) {
-      menu.forEach((s: any) => delete s._id); 
+      menu.forEach((s: any) => delete s._id);
       await MenuSection.insertMany(menu);
     }
-    
+
     const updatedMenu = await MenuSection.find({}).select('-_id -__v -items._id').lean();
     revalidatePath('/', 'layout');
     return NextResponse.json({ success: true, data: updatedMenu });
@@ -152,10 +138,10 @@ export async function DELETE(request: Request) {
 
     await MenuSection.deleteMany({});
     if (menu.length > 0) {
-      menu.forEach((s: any) => delete s._id); 
+      menu.forEach((s: any) => delete s._id);
       await MenuSection.insertMany(menu);
     }
-    
+
     const updatedMenu = await MenuSection.find({}).select('-_id -__v -items._id').lean();
     revalidatePath('/', 'layout');
     return NextResponse.json({ success: true, data: updatedMenu });

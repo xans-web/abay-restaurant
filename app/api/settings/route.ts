@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
 import connectToDatabase from '@/lib/db';
 import { Settings } from '@/lib/models';
 import { revalidatePath } from 'next/cache';
 
-const SETTINGS_FILE = path.join(process.cwd(), 'settings.json');
+export const dynamic = 'force-dynamic';
 
 // Auto-migrate function
 async function getSettings() {
@@ -13,12 +11,7 @@ async function getSettings() {
   let settings = await Settings.findById('global');
   
   if (!settings) {
-    try {
-      const data = JSON.parse(await fs.readFile(SETTINGS_FILE, 'utf-8'));
-      settings = await Settings.create({ _id: 'global', ...data });
-    } catch (e) {
-      settings = await Settings.create({ _id: 'global' });
-    }
+    settings = await Settings.create({ _id: 'global' });
   }
   return settings;
 }
@@ -30,7 +23,11 @@ export async function GET() {
     
     // Omit adminPassword from the public API response for security
     const { adminPassword, _id, __v, ...publicSettings } = data;
-    return NextResponse.json(publicSettings);
+    return NextResponse.json(publicSettings, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0, must-revalidate',
+      },
+    });
   } catch (error) {
     console.error("Settings GET Error:", error);
     return NextResponse.json({ error: 'Failed to read settings' }, { status: 500 });
