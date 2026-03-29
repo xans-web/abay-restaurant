@@ -98,7 +98,8 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await fetch('/api/menu', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
+        cache: 'no-store'
       });
       return res.ok;
     } catch (err) {
@@ -112,7 +113,8 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(content)
+        body: JSON.stringify(content),
+        cache: 'no-store'
       });
       return res.ok;
     } catch (err) {

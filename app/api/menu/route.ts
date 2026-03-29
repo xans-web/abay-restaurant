@@ -42,12 +42,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Clean up any categories that were explicitly deleted front-end
-    const incomingCategories = body.map((s: any) => s.category_en).filter(Boolean);
-    if (incomingCategories.length > 0) {
-      await MenuSection.deleteMany({ category_en: { $nin: incomingCategories } });
-    }
-
     revalidatePath('/', 'layout');
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -65,67 +59,61 @@ export async function PUT(request: Request) {
     switch (action) {
       case 'updateItem': {
         const { itemId, updates } = payload;
-        menu = menu.map((section: any) => ({
-          ...section,
-          items: section.items.map((item: any) =>
-            item.id === itemId ? { ...item, ...updates } : item
-          )
-        }));
+        await MenuSection.updateOne(
+          { "items.id": itemId },
+          { $set: { "items.$": updates } }
+        );
         break;
       }
       case 'bulkUpdateItems': {
         const { itemIds, updates } = payload;
-        menu = menu.map((section: any) => ({
-          ...section,
-          items: section.items.map((item: any) =>
-            itemIds.includes(item.id) ? { ...item, ...updates } : item
-          )
-        }));
+        // Mongoose doesn't have an easy "update multiple nested items" in one go with different parents
+        // but we can loop through the sections or do multiple updates.
+        // For simplicity and safety, we'll do individual updates for the specific items.
+        for (const id of itemIds) {
+          await MenuSection.updateOne(
+            { "items.id": id },
+            { $set: { "items.$": updates } }
+          );
+        }
         break;
       }
       case 'addItem': {
         const { categoryId, item } = payload;
         const newItem = { ...item, id: Date.now() };
-        menu = menu.map((section: any) =>
-          section.id === categoryId
-            ? { ...section, items: [...section.items, newItem] }
-            : section
+        await MenuSection.updateOne(
+          { id: categoryId },
+          { $push: { items: newItem } }
         );
         break;
       }
       case 'addCategory': {
         const { categoryName } = payload;
-        menu.push({
-          category: categoryName,
-          id: categoryName.toLowerCase().replace(/\s+/g, '-'),
-          items: []
-        });
+        const id = categoryName.toLowerCase().replace(/\s+/g, '-');
+        await MenuSection.findOneAndUpdate(
+          { id: id },
+          { 
+            $set: { 
+              category_en: categoryName,
+              category_am: categoryName, // default both to the name provided
+              id: id,
+              items: []
+            } 
+          },
+          { upsert: true }
+        );
         break;
       }
       case 'renameCategory': {
         const { categoryId, newName } = payload;
-        menu = menu.map((section: any) =>
-          section.id === categoryId
-            ? { ...section, category: newName }
-            : section
+        await MenuSection.updateOne(
+          { id: categoryId },
+          { $set: { category_en: newName } }
         );
         break;
       }
       default:
         return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
-    }
-
-    // Instead of deleting everything, just iterate and upsert
-    for (const section of menu) {
-      if (section && section.category_en) {
-        const sectData = typeof section.toObject === 'function' ? section.toObject() : section;
-        delete sectData._id; // prevent _id overwrite errors
-        await MenuSection.findOneAndUpdate(
-          { category_en: section.category_en },
-          { $set: sectData },
-          { upsert: true }
-        );
-      }
     }
 
     const updatedMenu = await MenuSection.find({}).select('-_id -__v -items._id').lean();
@@ -146,36 +134,19 @@ export async function DELETE(request: Request) {
     switch (action) {
       case 'deleteItem': {
         const { itemId } = payload;
-        menu = menu.map((section: any) => ({
-          ...section,
-          items: section.items.filter((item: any) => item.id !== itemId)
-        }));
+        await MenuSection.updateOne(
+          { "items.id": itemId },
+          { $pull: { items: { id: itemId } } }
+        );
         break;
       }
       case 'deleteCategory': {
         const { categoryId } = payload;
-        menu = menu.filter((section: any) => section.id !== categoryId);
+        await MenuSection.deleteOne({ id: categoryId });
         break;
       }
       default:
         return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
-    }
-
-    // Instead of deleting everything, update specific categories or remove absent ones
-    for (const section of menu) {
-      if (section && section.category_en) {
-        const sectData = typeof section.toObject === 'function' ? section.toObject() : section;
-        delete sectData._id;
-        await MenuSection.findOneAndUpdate(
-          { category_en: section.category_en },
-          { $set: sectData },
-          { upsert: true }
-        );
-      }
-    }
-    const incomingCategories = menu.map((s: any) => s.category_en).filter(Boolean);
-    if (incomingCategories.length > 0) {
-      await MenuSection.deleteMany({ category_en: { $nin: incomingCategories } });
     }
 
     const updatedMenu = await MenuSection.find({}).select('-_id -__v -items._id').lean();
