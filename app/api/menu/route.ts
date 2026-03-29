@@ -52,14 +52,18 @@ export async function POST(request: Request) {
         break;
       }
       case 'renameCategory': {
-        const { oldName, newName } = payload;
+        const { categoryId, newName } = payload;
         await MenuSection.updateOne(
-          { category_en: oldName },
+          { id: categoryId },
           { $set: { category_en: newName, category_am: newName } }
         );
-        break;
+        return NextResponse.json({ success: true });
       }
-
+      case 'deleteCategory': {
+        const { categoryId } = payload; // This is the 'id' field from your MongoDB screenshot
+        await MenuSection.deleteOne({ id: categoryId });
+        return NextResponse.json({ success: true });
+      }
       default:
         return NextResponse.json({ error: 'Invalid Category Action' }, { status: 400 });
     }
@@ -121,18 +125,13 @@ export async function PUT(request: Request) {
  */
 export async function DELETE(request: Request) {
   try {
-    const { action, itemId, categoryId, categoryName } = await request.json();
+    const { itemId, categoryId } = await request.json();
     await connectToDatabase();
 
-    if (action === 'deleteCategory') {
-      await MenuSection.deleteOne({ category_en: categoryName });
-    } else {
-      // Default: deleteItem
-      await MenuSection.updateOne(
-        { id: categoryId },
-        { $pull: { items: { id: itemId } } }
-      );
-    }
+    await MenuSection.updateOne(
+      { id: categoryId },
+      { $pull: { items: { id: itemId } } }
+    );
 
     revalidatePath('/', 'layout');
     return NextResponse.json({ success: true });

@@ -24,8 +24,8 @@ interface MenuContextType {
   addMenuItem: (categoryId: string, item: Omit<MenuItem, "id">) => Promise<boolean>;
   deleteMenuItem: (itemId: number) => Promise<boolean>;
   addCategory: (categoryName: string) => Promise<boolean>;
-  renameCategory: (oldName: string, newName: string) => Promise<boolean>;
-  deleteCategory: (categoryName: string) => Promise<boolean>;
+  renameCategory: (categoryId: string, newName: string) => Promise<boolean>;
+  deleteCategory: (categoryId: string) => Promise<boolean>;
   updateSiteContent: (updates: Partial<SiteContent>) => Promise<boolean>;
   refreshData: () => Promise<void>;
   language: 'en' | 'am';
@@ -215,14 +215,14 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const renameCategory = async (oldName: string, newName: string) => {
+  const renameCategory = async (categoryId: string, newName: string) => {
     try {
       const res = await fetch('/api/menu', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           action: 'renameCategory', 
-          payload: { oldName, newName } 
+          payload: { categoryId, newName } 
         }),
         cache: 'no-store'
       });
@@ -238,14 +238,14 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const deleteCategory = async (categoryName: string) => {
+  const deleteCategory = async (categoryId: string) => {
     try {
       const res = await fetch('/api/menu', {
-        method: 'DELETE',
+        method: 'POST', // Using POST for category actions switcher
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           action: 'deleteCategory', 
-          categoryName
+          payload: { categoryId } 
         }),
         cache: 'no-store'
       });
