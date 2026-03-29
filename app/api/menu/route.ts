@@ -4,6 +4,7 @@ import { MenuSection } from '@/lib/models';
 import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   try {
@@ -28,8 +29,25 @@ export async function POST(request: Request) {
     }
 
     await connectToDatabase();
-    await MenuSection.deleteMany({});
-    await MenuSection.insertMany(body);
+    
+    // Stop auto-overwriting entire DB collections
+    // Use upsert mechanism per unique category_en to prevent wipe-outs
+    for (const section of body) {
+      if (section && section.category_en) {
+        await MenuSection.findOneAndUpdate(
+          { category_en: section.category_en },
+          { $set: section },
+          { upsert: true, new: true }
+        );
+      }
+    }
+
+    // Clean up any categories that were explicitly deleted front-end
+    const incomingCategories = body.map((s: any) => s.category_en).filter(Boolean);
+    if (incomingCategories.length > 0) {
+      await MenuSection.deleteMany({ category_en: { $nin: incomingCategories } });
+    }
+
     revalidatePath('/', 'layout');
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -97,10 +115,17 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
 
-    await MenuSection.deleteMany({});
-    if (menu.length > 0) {
-      menu.forEach((s: any) => delete s._id);
-      await MenuSection.insertMany(menu);
+    // Instead of deleting everything, just iterate and upsert
+    for (const section of menu) {
+      if (section && section.category_en) {
+        const sectData = typeof section.toObject === 'function' ? section.toObject() : section;
+        delete sectData._id; // prevent _id overwrite errors
+        await MenuSection.findOneAndUpdate(
+          { category_en: section.category_en },
+          { $set: sectData },
+          { upsert: true }
+        );
+      }
     }
 
     const updatedMenu = await MenuSection.find({}).select('-_id -__v -items._id').lean();
@@ -136,10 +161,21 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
 
-    await MenuSection.deleteMany({});
-    if (menu.length > 0) {
-      menu.forEach((s: any) => delete s._id);
-      await MenuSection.insertMany(menu);
+    // Instead of deleting everything, update specific categories or remove absent ones
+    for (const section of menu) {
+      if (section && section.category_en) {
+        const sectData = typeof section.toObject === 'function' ? section.toObject() : section;
+        delete sectData._id;
+        await MenuSection.findOneAndUpdate(
+          { category_en: section.category_en },
+          { $set: sectData },
+          { upsert: true }
+        );
+      }
+    }
+    const incomingCategories = menu.map((s: any) => s.category_en).filter(Boolean);
+    if (incomingCategories.length > 0) {
+      await MenuSection.deleteMany({ category_en: { $nin: incomingCategories } });
     }
 
     const updatedMenu = await MenuSection.find({}).select('-_id -__v -items._id').lean();
