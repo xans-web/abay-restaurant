@@ -139,6 +139,8 @@ export default function Home() {
   
   const filterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const logoClickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [logoClicks, setLogoClicks] = useState(0);
 
   // Analytics: Record Page View on mount
   useEffect(() => {
@@ -394,6 +396,23 @@ export default function Home() {
     }
   };
 
+  const handleLogoClick = () => {
+    const newCount = logoClicks + 1;
+    setLogoClicks(newCount);
+    
+    if (newCount === 3) {
+      router.push("/admin");
+      setLogoClicks(0);
+      if (logoClickTimeoutRef.current) clearTimeout(logoClickTimeoutRef.current);
+      return;
+    }
+    
+    if (logoClickTimeoutRef.current) clearTimeout(logoClickTimeoutRef.current);
+    logoClickTimeoutRef.current = setTimeout(() => {
+      setLogoClicks(0);
+    }, 1500);
+  };
+
   const cartItemCount = Object.values(cart).reduce((a, b) => a + b, 0);
 
   const cartItemsData = useMemo(() => {
@@ -441,8 +460,11 @@ export default function Home() {
         <div className="max-w-7xl mx-auto flex flex-row items-center justify-between gap-3 md:gap-8 w-full py-2">
           {/* Logo and Title Group */}
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-            <div className="w-9 h-9 md:w-16 md:h-16 relative flex-shrink-0 border border-[#D4AF37]/30 rounded-lg overflow-hidden bg-black shadow-lg">
-              <img src={siteContent.logo || "/logo.png"} alt="Logo" className="w-full h-full object-cover" />
+            <div 
+              className="w-9 h-9 md:w-16 md:h-16 relative flex-shrink-0 border border-[#D4AF37]/30 rounded-lg overflow-hidden bg-black shadow-lg cursor-pointer"
+              onClick={handleLogoClick}
+            >
+              <img src={siteContent.logo || "/logo.png"} alt="Logo" className="w-full h-full object-cover pointer-events-none select-none" />
             </div>
             <div className="flex flex-col justify-center">
               <h1 className="text-[10px] md:text-3xl font-serif text-[#D4AF37] tracking-tighter leading-none font-bold uppercase">{siteContent.hotelName}</h1>
