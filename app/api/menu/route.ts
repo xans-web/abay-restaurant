@@ -6,10 +6,13 @@ import { revalidatePath } from 'next/cache';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+/**
+ * GET: Fetch all menu sections from MongoDB.
+ * No local JSON fallback.
+ */
 export async function GET() {
   try {
     await connectToDatabase();
-    // Use select to omit internal Mongo fields that the frontend doesn't need
     const menu = await MenuSection.find({}).select('-_id -__v -items._id').lean();
     return NextResponse.json(menu, {
       headers: {
@@ -21,72 +24,16 @@ export async function GET() {
   }
 }
 
+/**
+ * POST: Atomic Category/Section operations.
+ * action: 'addCategory' | 'renameCategory' | 'deleteCategory'
+ */
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    if (!Array.isArray(body)) {
-      return NextResponse.json({ error: 'Menu data must be an array' }, { status: 400 });
-    }
-
-    await connectToDatabase();
-    
-    // Stop auto-overwriting entire DB collections
-    // Use upsert mechanism per unique category_en to prevent wipe-outs
-    for (const section of body) {
-      if (section && section.category_en) {
-        await MenuSection.findOneAndUpdate(
-          { category_en: section.category_en },
-          { $set: section },
-          { upsert: true, new: true }
-        );
-      }
-    }
-
-    revalidatePath('/', 'layout');
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to save menu data' }, { status: 500 });
-  }
-}
-
-export async function PUT(request: Request) {
   try {
     const { action, payload } = await request.json();
     await connectToDatabase();
-    const sections = await MenuSection.find({});
-    let menu = sections.map(s => s.toObject());
 
     switch (action) {
-      case 'updateItem': {
-        const { itemId, updates } = payload;
-        await MenuSection.updateOne(
-          { "items.id": itemId },
-          { $set: { "items.$": updates } }
-        );
-        break;
-      }
-      case 'bulkUpdateItems': {
-        const { itemIds, updates } = payload;
-        // Mongoose doesn't have an easy "update multiple nested items" in one go with different parents
-        // but we can loop through the sections or do multiple updates.
-        // For simplicity and safety, we'll do individual updates for the specific items.
-        for (const id of itemIds) {
-          await MenuSection.updateOne(
-            { "items.id": id },
-            { $set: { "items.$": updates } }
-          );
-        }
-        break;
-      }
-      case 'addItem': {
-        const { categoryId, item } = payload;
-        const newItem = { ...item, id: Date.now() };
-        await MenuSection.updateOne(
-          { id: categoryId },
-          { $push: { items: newItem } }
-        );
-        break;
-      }
       case 'addCategory': {
         const { categoryName } = payload;
         const id = categoryName.toLowerCase().replace(/\s+/g, '-');
@@ -95,64 +42,101 @@ export async function PUT(request: Request) {
           { 
             $set: { 
               category_en: categoryName,
-              category_am: categoryName, // default both to the name provided
+              category_am: categoryName,
               id: id,
               items: []
             } 
           },
-          { upsert: true }
+          { upsert: true, new: true }
         );
         break;
       }
       case 'renameCategory': {
-        const { categoryId, newName } = payload;
+        const { oldName, newName } = payload;
         await MenuSection.updateOne(
-          { id: categoryId },
-          { $set: { category_en: newName } }
+          { category_en: oldName },
+          { $set: { category_en: newName, category_am: newName } }
         );
         break;
       }
+
       default:
-        return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
+        return NextResponse.json({ error: 'Invalid Category Action' }, { status: 400 });
     }
 
-    const updatedMenu = await MenuSection.find({}).select('-_id -__v -items._id').lean();
     revalidatePath('/', 'layout');
-    return NextResponse.json({ success: true, data: updatedMenu });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update menu data' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to process category' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: Request) {
+/**
+ * PUT: Atomic Item operations (Update or Add).
+ * action: 'upsertItem' (takes categoryId and item data)
+ */
+export async function PUT(request: Request) {
   try {
     const { action, payload } = await request.json();
     await connectToDatabase();
-    const sections = await MenuSection.find({});
-    let menu = sections.map(s => s.toObject());
 
-    switch (action) {
-      case 'deleteItem': {
-        const { itemId } = payload;
+    if (action === 'upsertItem') {
+      const { categoryId, item } = payload;
+      // If item has no ID, it's a new item (Add)
+      if (!item.id) {
+        const newItem = { ...item, id: Date.now() };
         await MenuSection.updateOne(
-          { "items.id": itemId },
-          { $pull: { items: { id: itemId } } }
+          { id: categoryId },
+          { $push: { items: newItem } }
         );
-        break;
+      } else {
+        // Existing item (Update)
+        await MenuSection.updateOne(
+          { id: categoryId, "items.id": item.id },
+          { $set: { "items.$": item } }
+        );
       }
-      case 'deleteCategory': {
-        const { categoryId } = payload;
-        await MenuSection.deleteOne({ id: categoryId });
-        break;
+    } else if (action === 'bulkUpdate') {
+      const { itemIds, updates } = payload;
+      for (const id of itemIds) {
+        await MenuSection.updateOne(
+          { "items.id": id },
+          { $set: { "items.$": updates } }
+        );
       }
-      default:
-        return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
+    } else {
+      return NextResponse.json({ error: 'Invalid Item Action' }, { status: 400 });
     }
 
-    const updatedMenu = await MenuSection.find({}).select('-_id -__v -items._id').lean();
     revalidatePath('/', 'layout');
-    return NextResponse.json({ success: true, data: updatedMenu });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE: Atomic Item removal.
+ * payload: { itemId, categoryId }
+ */
+export async function DELETE(request: Request) {
+  try {
+    const { action, itemId, categoryId, categoryName } = await request.json();
+    await connectToDatabase();
+
+    if (action === 'deleteCategory') {
+      await MenuSection.deleteOne({ category_en: categoryName });
+    } else {
+      // Default: deleteItem
+      await MenuSection.updateOne(
+        { id: categoryId },
+        { $pull: { items: { id: itemId } } }
+      );
+    }
+
+    revalidatePath('/', 'layout');
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 });
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { MenuSection, initialMenuData, MenuItem } from '@/lib/menu-data';
+import { MenuSection, MenuItem } from '@/lib/menu-data';
 
 interface SiteContent {
   hotelName: string;
@@ -24,8 +24,8 @@ interface MenuContextType {
   addMenuItem: (categoryId: string, item: Omit<MenuItem, "id">) => Promise<boolean>;
   deleteMenuItem: (itemId: number) => Promise<boolean>;
   addCategory: (categoryName: string) => Promise<boolean>;
-  renameCategory: (categoryId: string, newName: string) => Promise<boolean>;
-  deleteCategory: (categoryId: string) => Promise<boolean>;
+  renameCategory: (oldName: string, newName: string) => Promise<boolean>;
+  deleteCategory: (categoryName: string) => Promise<boolean>;
   updateSiteContent: (updates: Partial<SiteContent>) => Promise<boolean>;
   refreshData: () => Promise<void>;
   language: 'en' | 'am';
@@ -46,7 +46,8 @@ const initialSiteContent: SiteContent = {
 };
 
 export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [menuData, setMenuData] = useState<MenuSection[]>(initialMenuData);
+  // Use empty array initially to stop auto-seeds from appearing before fetch
+  const [menuData, setMenuData] = useState<MenuSection[]>([]);
   const [siteContent, setSiteContent] = useState<SiteContent>(initialSiteContent);
   const [language, setLanguageState] = useState<'en' | 'am'>('en');
 
@@ -60,7 +61,6 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Wrapper to save to localStorage whenever language changes
   const setLanguage = useCallback((lang: 'en' | 'am') => {
     setLanguageState(lang);
     if (typeof window !== 'undefined') {
@@ -72,9 +72,9 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const timestamp = new Date().getTime();
       const menuRes = await fetch(`/api/menu?t=${timestamp}`, { cache: 'no-store' });
-      const menuData = await menuRes.json();
-      if (Array.isArray(menuData) && menuData.length > 0) {
-        setMenuData(menuData);
+      const data = await menuRes.json();
+      if (Array.isArray(data)) {
+        setMenuData(data);
       }
 
       const settingsRes = await fetch(`/api/settings?t=${timestamp}`, { cache: 'no-store' });
@@ -87,116 +87,198 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Load menu data from server on mount
   useEffect(() => {
     refreshData();
   }, [refreshData]);
 
-  // Save menu data to server (fire-and-forget for responsiveness)
-  const saveToServer = useCallback(async (data: MenuSection[]) => {
+  // NEW ATOMIC INTERACTION METHODS
+  
+  const updateMenuItem = async (itemId: number, updates: Partial<MenuItem>) => {
+    try {
+      // Find the categoryId for the item
+      const section = menuData.find(s => s.items.some(i => i.id === itemId));
+      if (!section) return false;
+
+      const currentItem = section.items.find(i => i.id === itemId);
+      const updatedItem = { ...currentItem, ...updates };
+
+      const res = await fetch('/api/menu', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'upsertItem', 
+          payload: { categoryId: section.id, item: updatedItem } 
+        }),
+        cache: 'no-store'
+      });
+
+      if (res.ok) {
+        await refreshData();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed to update item", err);
+      return false;
+    }
+  };
+
+  const bulkUpdateItems = async (itemIds: number[], updates: Partial<MenuItem>) => {
+    try {
+      const res = await fetch('/api/menu', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'bulkUpdate', 
+          payload: { itemIds, updates } 
+        }),
+        cache: 'no-store'
+      });
+
+      if (res.ok) {
+        await refreshData();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed bulk update", err);
+      return false;
+    }
+  };
+
+  const addMenuItem = async (categoryId: string, item: Omit<MenuItem, "id">) => {
+    try {
+      const res = await fetch('/api/menu', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'upsertItem', 
+          payload: { categoryId, item } 
+        }), // No ID means server will generate one
+        cache: 'no-store'
+      });
+
+      if (res.ok) {
+        await refreshData();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed to add item", err);
+      return false;
+    }
+  };
+
+  const deleteMenuItem = async (itemId: number) => {
+    try {
+      const section = menuData.find(s => s.items.some(i => i.id === itemId));
+      if (!section) return false;
+
+      const res = await fetch('/api/menu', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId, categoryId: section.id }),
+        cache: 'no-store'
+      });
+
+      if (res.ok) {
+        await refreshData();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed to delete item", err);
+      return false;
+    }
+  };
+
+  const addCategory = async (categoryName: string) => {
     try {
       const res = await fetch('/api/menu', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ 
+          action: 'addCategory', 
+          payload: { categoryName } 
+        }),
         cache: 'no-store'
       });
-      return res.ok;
+
+      if (res.ok) {
+        await refreshData();
+        return true;
+      }
+      return false;
     } catch (err) {
-      console.error("Failed to save menu data to server", err);
+      console.error("Failed to add category", err);
       return false;
     }
-  }, []);
+  };
 
-  const saveContentToServer = async (content: SiteContent) => {
+  const renameCategory = async (oldName: string, newName: string) => {
     try {
-      const res = await fetch('/api/settings', {
+      const res = await fetch('/api/menu', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(content),
+        body: JSON.stringify({ 
+          action: 'renameCategory', 
+          payload: { oldName, newName } 
+        }),
         cache: 'no-store'
       });
-      return res.ok;
+
+      if (res.ok) {
+        await refreshData();
+        return true;
+      }
+      return false;
     } catch (err) {
-      console.error("Failed to save settings to server", err);
+      console.error("Failed to rename category", err);
+      return false;
+    }
+  };
+
+  const deleteCategory = async (categoryName: string) => {
+    try {
+      const res = await fetch('/api/menu', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'deleteCategory', 
+          categoryName
+        }),
+        cache: 'no-store'
+      });
+
+      if (res.ok) {
+        await refreshData();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed to delete category", err);
       return false;
     }
   };
 
   const updateSiteContent = async (updates: Partial<SiteContent>) => {
-    const newContent = { ...siteContent, ...updates };
-    setSiteContent(newContent);
-    return await saveContentToServer(newContent);
-  };
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+        cache: 'no-store'
+      });
 
-  const updateMenuItem = async (itemId: number, updates: Partial<MenuItem>) => {
-    const newData = menuData.map(section => ({
-      ...section,
-      items: section.items.map(item => 
-        item.id === itemId ? { ...item, ...updates } : item
-      )
-    }));
-    setMenuData(newData);
-    return await saveToServer(newData);
-  };
-
-  const bulkUpdateItems = async (itemIds: number[], updates: Partial<MenuItem>) => {
-    const newData = menuData.map(section => ({
-      ...section,
-      items: section.items.map(item => 
-        itemIds.includes(item.id) ? { ...item, ...updates } : item
-      )
-    }));
-    setMenuData(newData);
-    return await saveToServer(newData);
-  };
-
-  const addMenuItem = async (categoryId: string, item: Omit<MenuItem, "id">) => {
-    const newItem = { ...item, id: Date.now() };
-    const newData = menuData.map(section => 
-      section.id === categoryId 
-        ? { ...section, items: [...section.items, newItem] } 
-        : section
-    );
-    setMenuData(newData);
-    return await saveToServer(newData);
-  };
-
-  const deleteMenuItem = async (itemId: number) => {
-    const newData = menuData.map(section => ({
-      ...section,
-      items: section.items.filter(item => item.id !== itemId)
-    }));
-    setMenuData(newData);
-    return await saveToServer(newData);
-  };
-
-  const addCategory = async (categoryName: string) => {
-    const newCategory: MenuSection = {
-      category_en: categoryName,
-      category_am: categoryName,
-      id: categoryName.toLowerCase().replace(/\s+/g, '-'),
-      items: []
-    };
-    const newData = [...menuData, newCategory];
-    setMenuData(newData);
-    return await saveToServer(newData);
-  };
-
-  const renameCategory = async (categoryId: string, newName: string) => {
-    const newData = menuData.map(section => 
-      section.id === categoryId 
-        ? { ...section, category_en: newName, category_am: newName } 
-        : section
-    );
-    setMenuData(newData);
-    return await saveToServer(newData);
-  };
-
-  const deleteCategory = async (categoryId: string) => {
-    const newData = menuData.filter(section => section.id !== categoryId);
-    setMenuData(newData);
-    return await saveToServer(newData);
+      if (res.ok) {
+        await refreshData();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed to update settings", err);
+      return false;
+    }
   };
 
   return (
