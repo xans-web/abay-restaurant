@@ -28,6 +28,8 @@ interface MenuContextType {
   deleteCategory: (categoryId: string) => Promise<boolean>;
   updateSiteContent: (updates: Partial<SiteContent>) => Promise<boolean>;
   refreshData: () => Promise<void>;
+  language: 'en' | 'am';
+  setLanguage: (lang: 'en' | 'am') => void;
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined);
@@ -46,6 +48,25 @@ const initialSiteContent: SiteContent = {
 export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [menuData, setMenuData] = useState<MenuSection[]>(initialMenuData);
   const [siteContent, setSiteContent] = useState<SiteContent>(initialSiteContent);
+  const [language, setLanguageState] = useState<'en' | 'am'>('en');
+
+  // Load language preference from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('language');
+      if (savedLang === 'am' || savedLang === 'en') {
+        setLanguageState(savedLang);
+      }
+    }
+  }, []);
+
+  // Wrapper to save to localStorage whenever language changes
+  const setLanguage = useCallback((lang: 'en' | 'am') => {
+    setLanguageState(lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('language', lang);
+    }
+  }, []);
 
   const refreshData = useCallback(async () => {
     try {
@@ -150,7 +171,8 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addCategory = async (categoryName: string) => {
     const newCategory: MenuSection = {
-      category: categoryName,
+      category_en: categoryName,
+      category_am: categoryName,
       id: categoryName.toLowerCase().replace(/\s+/g, '-'),
       items: []
     };
@@ -162,7 +184,7 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const renameCategory = async (categoryId: string, newName: string) => {
     const newData = menuData.map(section => 
       section.id === categoryId 
-        ? { ...section, category: newName } 
+        ? { ...section, category_en: newName, category_am: newName } 
         : section
     );
     setMenuData(newData);
@@ -187,7 +209,9 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       renameCategory, 
       deleteCategory,
       updateSiteContent,
-      refreshData
+      refreshData,
+      language,
+      setLanguage
     }}>
       {children}
     </MenuContext.Provider>

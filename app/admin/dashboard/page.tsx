@@ -33,7 +33,7 @@ export default function AdminDashboard() {
   const [isSaving, setIsSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItem, setNewItem] = useState({
-    enName: "", amName: "", enDesc: "", amDesc: "", price: "", categoryId: "", image: "", isSpecial: false, isNew: true
+    name_en: "", name_am: "", description_en: "", description_am: "", price: "", categoryId: "", image: "", isSpecial: false, isNew: true
   });
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isLightMode, setIsLightMode] = useState(false);
@@ -292,14 +292,16 @@ export default function AdminDashboard() {
 
   const handleAddFood = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItem.enName || !newItem.price || !newItem.categoryId) return;
+    if (!newItem.name_en || !newItem.price || !newItem.categoryId) return;
     
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     const success = await addMenuItem(newItem.categoryId, {
-      en: { name: newItem.enName, desc: newItem.enDesc },
-      am: { name: newItem.amName || newItem.enName, desc: newItem.amDesc || newItem.enDesc },
+      name_en: newItem.name_en,
+      name_am: newItem.name_am || newItem.name_en,
+      description_en: newItem.description_en,
+      description_am: newItem.description_am || newItem.description_en,
       price: parseFloat(newItem.price),
       image: newItem.image,
       isSpecial: newItem.isSpecial,
@@ -307,7 +309,7 @@ export default function AdminDashboard() {
       isNew: newItem.isNew
     });
     
-    setNewItem({ enName: "", amName: "", enDesc: "", amDesc: "", price: "", categoryId: "", image: "", isSpecial: false, isNew: true });
+    setNewItem({ name_en: "", name_am: "", description_en: "", description_am: "", price: "", categoryId: "", image: "", isSpecial: false, isNew: true });
     setShowAddForm(false);
     setIsSaving(false);
     if (success) triggerSuccess();
@@ -323,10 +325,10 @@ export default function AdminDashboard() {
   const totalCategories = menuData.length;
   const totalItems = menuData.reduce((acc, cat) => acc + cat.items.length, 0);
 
-  const flatItems = menuData.flatMap(cat => cat.items.map(item => ({...item, categoryName: cat.category})));
+  const flatItems = menuData.flatMap(cat => cat.items.map(item => ({...item, categoryName: cat.category_en})));
   const filteredItems = flatItems.filter(item => 
-    item.en.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    item.am.name.toLowerCase().includes(searchQuery.toLowerCase())
+    item.name_en.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    item.name_am.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -567,7 +569,7 @@ export default function AdminDashboard() {
                       <div key={item.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className={`${tm.textAcc} font-bold opacity-50`}>#{idx + 1}</span>
-                          <span className={`font-serif ${tm.tableText}`}>{item.en.name}</span>
+                          <span className={`font-serif ${tm.tableText}`}>{item.name_en}</span>
                         </div>
                         <span className={`px-2 py-1 rounded bg-[#D4AF37]/10 text-[#D4AF37] text-[10px] font-black`}>{item.clicks || 0} CLICKS</span>
                       </div>
@@ -582,7 +584,7 @@ export default function AdminDashboard() {
                       <div key={item.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className={`${tm.textAcc} font-bold opacity-50`}>#{idx + 1}</span>
-                          <span className={`font-serif ${tm.tableText}`}>{item.en.name}</span>
+                          <span className={`font-serif ${tm.tableText}`}>{item.name_en}</span>
                         </div>
                         <span className={`px-2 py-1 rounded bg-[#D4AF37]/10 text-[#D4AF37] text-[10px] font-black`}>{item.cartAdds || 0} ADDS</span>
                       </div>
@@ -620,11 +622,11 @@ export default function AdminDashboard() {
                     <div className="space-y-4">
                       <div>
                         <label className={`block text-xs uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Food Name (En)</label>
-                        <input type="text" required value={newItem.enName} onChange={e => setNewItem({...newItem, enName: e.target.value})} className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50`} />
+                        <input type="text" required value={newItem.name_en} onChange={e => setNewItem({...newItem, name_en: e.target.value})} className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50`} />
                       </div>
                       <div>
                         <label className={`block text-xs uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Food Name (Am)</label>
-                        <input type="text" value={newItem.amName} onChange={e => setNewItem({...newItem, amName: e.target.value})} className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50`} />
+                        <input type="text" value={newItem.name_am} onChange={e => setNewItem({...newItem, name_am: e.target.value})} className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50`} />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -635,7 +637,7 @@ export default function AdminDashboard() {
                           <label className={`block text-xs uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Category</label>
                           <select required value={newItem.categoryId} onChange={e => setNewItem({...newItem, categoryId: e.target.value})} className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50`}>
                             <option value="">Select...</option>
-                            {menuData.map(cat => <option key={cat.id} value={cat.id}>{cat.category}</option>)}
+                            {menuData.map(cat => <option key={cat.id} value={cat.id}>{cat.category_en}</option>)}
                           </select>
                         </div>
                       </div>
@@ -690,7 +692,7 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-1 gap-4">
                         <div>
                           <label className={`block text-xs uppercase tracking-widest ${tm.textAcc} font-bold mb-2`}>Description</label>
-                          <textarea rows={2} value={newItem.enDesc} onChange={e => setNewItem({...newItem, enDesc: e.target.value})} className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 resize-none`} />
+                          <textarea rows={2} value={newItem.description_en} onChange={e => setNewItem({...newItem, description_en: e.target.value})} className={`w-full ${tm.inputBg} border rounded py-3 px-4 focus:outline-none focus:border-[#D4AF37]/50 resize-none`} />
                         </div>
                       </div>
                       <div className="flex gap-4">
@@ -752,7 +754,7 @@ export default function AdminDashboard() {
                             <img src={item.image} className="w-full h-full object-cover rounded-2xl border-2 border-[#D4AF37]/30 shadow-lg" />
                           ) : (
                             <div className={`w-full h-full ${tm.inputBg} border-2 border-dashed ${tm.sidebarBorder} rounded-2xl flex items-center justify-center opacity-40`}>
-                              <span className={`${tm.textAcc} font-serif text-3xl`}>{item.en.name[0]}</span>
+                              <span className={`${tm.textAcc} font-serif text-3xl`}>{item.name_en[0]}</span>
                             </div>
                           )}
                         </div>
@@ -789,8 +791,8 @@ export default function AdminDashboard() {
                         <div className="space-y-1">
                           <input 
                             type="text" 
-                            value={(pendingEdits[item.id]?.en as {name?: string; desc?: string} | undefined)?.name ?? item.en.name}
-                            onChange={(e) => handleUpdateItem(item.id, { en: { ...item.en, name: e.target.value } })}
+                            value={(pendingEdits[item.id] as {name_en?: string} | undefined)?.name_en ?? item.name_en}
+                            onChange={(e) => handleUpdateItem(item.id, { name_en: e.target.value })}
                             className={`bg-transparent border-b text-2xl font-serif ${tm.tableText} font-black focus:outline-none w-full truncate placeholder:opacity-30 ${
                               dirtyItemIds.has(item.id) ? 'border-[#D4AF37]' : 'border-transparent'
                             } transition-colors`}
@@ -859,7 +861,7 @@ export default function AdminDashboard() {
                         />
                         <span className="text-[10px] uppercase tracking-widest font-black text-[#D4AF37]">Select</span>
                       </label>
-                      <button onClick={() => handleDeleteItem(item.id, item.en.name)} className="h-11 w-11 flex items-center justify-center rounded-full bg-red-500/10 text-red-500 active:bg-red-500 active:text-white transition-all shadow-sm">
+                      <button onClick={() => handleDeleteItem(item.id, item.name_en)} className="h-11 w-11 flex items-center justify-center rounded-full bg-red-500/10 text-red-500 active:bg-red-500 active:text-white transition-all shadow-sm">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>
@@ -917,7 +919,7 @@ export default function AdminDashboard() {
                                 <img src={item.image} className="w-14 h-14 object-cover rounded border border-[#D4AF37]/40 shadow-sm" />
                               ) : (
                                 <div className={`w-14 h-14 ${tm.inputBg} border ${tm.sidebarBorder} rounded flex items-center justify-center`}>
-                                  <span className={`${tm.textAcc} font-serif text-xl opacity-40`}>{item.en.name[0]}</span>
+                                  <span className={`${tm.textAcc} font-serif text-xl opacity-40`}>{item.name_en[0]}</span>
                                 </div>
                               )}
                               <div className={`absolute inset-0 ${isLightMode ? 'bg-white/90' : 'bg-black/90'} backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 rounded flex flex-col items-center justify-center border ${tm.sidebarBorder} gap-1 shadow-xl z-20`}>
@@ -957,8 +959,8 @@ export default function AdminDashboard() {
                           <td className="p-4 flex flex-col gap-1">
                             <input 
                               type="text"
-                              value={(pendingEdits[item.id]?.en as {name?: string; desc?: string} | undefined)?.name ?? item.en.name}
-                              onChange={(e) => handleUpdateItem(item.id, { en: { ...item.en, name: e.target.value } })}
+                              value={(pendingEdits[item.id] as {name_en?: string} | undefined)?.name_en ?? item.name_en}
+                              onChange={(e) => handleUpdateItem(item.id, { name_en: e.target.value })}
                               className={`bg-transparent border-b text-base font-serif ${tm.tableText} font-bold focus:outline-none w-full ${
                                 dirtyItemIds.has(item.id) ? 'border-[#D4AF37]' : 'border-transparent'
                               } transition-colors`}
@@ -1015,7 +1017,7 @@ export default function AdminDashboard() {
                             </div>
                           </td>
                           <td className="p-4 text-right">
-                             <button onClick={() => handleDeleteItem(item.id, item.en.name)} className={`p-2 transition-colors ${tm.deleteBtn}`}>
+                             <button onClick={() => handleDeleteItem(item.id, item.name_en)} className={`p-2 transition-colors ${tm.deleteBtn}`}>
                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                              </button>
                           </td>
@@ -1056,7 +1058,7 @@ export default function AdminDashboard() {
                       <div className="flex-grow">
                         <input 
                           type="text" 
-                          value={cat.category}
+                          value={cat.category_en}
                           onChange={async (e) => {
                             const success = await renameCategory(cat.id, e.target.value);
                             if (success) router.refresh();

@@ -7,14 +7,17 @@ import Link from "next/link";
 
 interface MenuItem {
   id: number;
-  en: { name: string; desc: string };
-  am: { name: string; desc: string };
+  name_en: string;
+  name_am: string;
+  description_en: string;
+  description_am: string;
   price: number;
 }
 
 interface MenuSection {
   id: string;
-  category: string;
+  category_en: string;
+  category_am: string;
   items: MenuItem[];
 }
 
@@ -74,7 +77,7 @@ export default function PrintMenuPage() {
   const renderItem = (item: MenuItem) => (
     <div key={item.id} className="flex items-baseline gap-0.5 leading-[1.3] py-[0.5px]">
       <span className="text-[9pt] font-bold text-black flex-shrink-0 max-w-[72%] truncate">
-        {item.en.name}
+        {item.name_en}
       </span>
       <div className="flex-1 border-b border-dotted border-black/15 mb-[2px] min-w-[8px]" />
       <span className="text-[9pt] font-bold text-black flex-shrink-0 tabular-nums">

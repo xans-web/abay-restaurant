@@ -1,7 +1,9 @@
 export interface MenuItem {
   id: number;
-  en: { name: string; desc: string };
-  am: { name: string; desc: string };
+  name_en: string;
+  name_am: string;
+  description_en: string;
+  description_am: string;
   price: number;
   image: string;
   isSpecial: boolean;
@@ -12,7 +14,8 @@ export interface MenuItem {
 }
 
 export interface MenuSection {
-  category: string;
+  category_en: string;
+  category_am: string;
   id: string;
   items: MenuItem[];
 }

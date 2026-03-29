@@ -2,14 +2,10 @@ import mongoose from 'mongoose';
 
 const MenuItemSchema = new mongoose.Schema({
   id: { type: Number, required: true },
-  en: {
-    name: { type: String, required: true },
-    desc: { type: String, required: true }
-  },
-  am: {
-    name: { type: String, required: true },
-    desc: { type: String, required: true }
-  },
+  name_en: { type: String, required: true },
+  name_am: { type: String, required: true },
+  description_en: { type: String, required: true },
+  description_am: { type: String, required: true },
   price: { type: Number, required: true },
   image: { type: String, default: "" },
   isSpecial: { type: Boolean, default: false },
@@ -21,7 +17,8 @@ const MenuItemSchema = new mongoose.Schema({
 
 const MenuSectionSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
-  category: { type: String, required: true },
+  category_en: { type: String, required: true },
+  category_am: { type: String, required: true },
   items: [MenuItemSchema]
 });
 

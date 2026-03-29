@@ -126,8 +126,7 @@ const SafeImage = ({ src, alt, fill, ...props }: any) => {
 
 export default function Home() {
   const router = useRouter();
-  const { menuData, siteContent, refreshData } = useMenu();
-  const [lang, setLang] = useState<"en" | "am">("en");
+  const { menuData, siteContent, refreshData, language: lang, setLanguage: setLang } = useMenu();
   const [isLightMode, setIsLightMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [priceLimit, setPriceLimit] = useState(30);
@@ -417,9 +416,11 @@ export default function Home() {
     return menuData.map(section => ({
       ...section,
       items: section.items.filter(item => {
-        const matchesSearch = item[lang].name.toLowerCase().includes(searchQuery.toLowerCase());
+        const itemName = lang === 'en' ? item.name_en : item.name_am;
+        const sectionCat = lang === 'en' ? section.category_en : section.category_am;
+        const matchesSearch = itemName.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesPrice = item.price <= priceLimit;
-        const matchesCategory = activeCategory === "All" || section.category === activeCategory;
+        const matchesCategory = activeCategory === "All" || sectionCat === activeCategory;
         
         return matchesSearch && matchesPrice && matchesCategory;
       })
@@ -576,18 +577,18 @@ export default function Home() {
               {item.image ? (
                 <SafeImage 
                   src={item.image} 
-                  alt={item[lang].name} 
+                  alt={lang === 'en' ? item.name_en : item.name_am} 
                   fill
                   className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" 
                 />
               ) : (
                 <div className={`absolute inset-0 w-full h-full ${isLightMode ? 'bg-gradient-to-br from-[#FFFBEB] to-[#F9F9F9]' : 'bg-[#000000]'} flex items-center justify-center`}>
-                  <span className={`${tm.textAcc} font-serif text-4xl opacity-40`}>{item[lang].name.charAt(0)}</span>
+                  <span className={`${tm.textAcc} font-serif text-4xl opacity-40`}>{(lang === 'en' ? item.name_en : item.name_am).charAt(0)}</span>
                 </div>
               )}
               {/* No darkening overlay for 100% clarity */}
               <div className="absolute bottom-2 left-4 z-10">
-                <h3 className={`font-serif text-sm md:text-xl tracking-wide leading-tight transition-colors text-[#D4AF37] drop-shadow-md`}>{item[lang].name}</h3>
+                <h3 className={`font-serif text-sm md:text-xl tracking-wide leading-tight transition-colors text-[#D4AF37] drop-shadow-md`}>{lang === 'en' ? item.name_en : item.name_am}</h3>
                 <div className="flex items-center gap-4 mt-1">
                   <span className="text-[#D4AF37] font-black text-xs md:text-lg">{item.price} ETB</span>
                   <div className="flex items-center gap-2">
@@ -629,7 +630,7 @@ export default function Home() {
         style={{ position: 'sticky', top: '70px', zIndex: 998, height: '60px' }}
       >
         <div className="max-w-7xl mx-auto flex flex-nowrap justify-start gap-2 md:gap-4 overflow-x-auto no-scrollbar py-2 w-full category-scroll-list">
-          {["All", ...menuData.map(c => c.category)].map((cat) => (
+          {["All", ...menuData.map(c => lang === 'en' ? c.category_en : c.category_am)].map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
@@ -662,10 +663,12 @@ export default function Home() {
         {/* Main Grid */}
         <div className="space-y-16 md:space-y-24">
           {filteredMenuData.map((section) => (
-            <section key={section.category} className="">
+            <section key={section.category_en} className="">
               <div className="flex items-center gap-3 mb-10">
-                <CategoryIcon name={section.category} className={`w-5 h-5 ${tm.textMuted}`} />
-                <h3 className={`text-sm md:text-base font-serif ${tm.textMuted} uppercase tracking-[0.4em]`}>{t.categories[section.category as keyof typeof t.categories]}</h3>
+                <CategoryIcon name={lang === 'en' ? section.category_en : section.category_am} className={`w-5 h-5 ${tm.textMuted}`} />
+                <h3 className={`text-sm md:text-base font-serif ${tm.textMuted} uppercase tracking-[0.4em]`}>
+                  {t.categories[(lang === 'en' ? section.category_en : section.category_am) as keyof typeof t.categories] || (lang === 'en' ? section.category_en : section.category_am)}
+                </h3>
                 <div className={`h-[1px] flex-grow ${tm.borderMain} border-t ml-2`}></div>
               </div>
 
@@ -683,13 +686,13 @@ export default function Home() {
                       {item.image ? (
                         <SafeImage 
                           src={item.image} 
-                          alt={item[lang].name} 
+                          alt={lang === 'en' ? item.name_en : item.name_am} 
                           fill
                           className="w-full h-full object-cover" 
                         />
                       ) : (
                         <div className={`w-full h-full flex items-center justify-center bg-[#1A1A1A]`}>
-                          <span className={`${tm.textAcc} font-serif text-5xl opacity-40`}>{item[lang].name.charAt(0)}</span>
+                          <span className={`${tm.textAcc} font-serif text-5xl opacity-40`}>{(lang === 'en' ? item.name_en : item.name_am).charAt(0)}</span>
                         </div>
                       )}
                       </div>
@@ -713,7 +716,7 @@ export default function Home() {
                     <div className={`w-full h-full ${tm.cardFrameBg} rounded-3xl border ${tm.cardFrameBorder} ${tm.cardFrameHoverBorder} pl-40 md:pl-56 pr-4 md:pr-12 py-3 md:py-6 flex flex-col items-center justify-between text-center relative overflow-hidden ${tm.cardFrameShadow} ${tm.cardFrameHoverShadow} transition-all duration-500`}>
                       {/* Top: Name & Price */}
                       <div className="flex-shrink-0 w-full max-w-[200px] md:max-w-[300px]">
-                        <h3 className={`text-lg md:text-3xl font-serif font-black ${tm.cardTitleColor} transition-colors leading-tight break-words line-clamp-1`}>{item[lang].name}</h3>
+                        <h3 className={`text-lg md:text-3xl font-serif font-black ${tm.cardTitleColor} transition-colors leading-tight break-words line-clamp-1`}>{lang === 'en' ? item.name_en : item.name_am}</h3>
                         <span className={`${tm.cardPriceColor} font-black text-base md:text-2xl whitespace-nowrap`}>{item.price} ETB</span>
                       </div>
 
@@ -723,7 +726,7 @@ export default function Home() {
                           onClick={() => handleItemClick(item.id)}
                           className={`${tm.cardDescColor} text-[10px] md:text-sm italic font-light leading-relaxed transition-colors cursor-pointer hover:opacity-80 w-full line-clamp-2 overflow-hidden`}
                           title="Tap to read more"
-                        >{item[lang].desc}</p>
+                        >{lang === 'en' ? item.description_en : item.description_am}</p>
                       </div>
 
                       {/* Bottom: ADD button (always anchored) */}
@@ -811,10 +814,10 @@ export default function Home() {
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
-              <h3 className={`text-xl font-serif font-black ${tm.cardTitleColor} mb-1`}>{found[lang].name}</h3>
+              <h3 className={`text-xl font-serif font-black ${tm.cardTitleColor} mb-1`}>{lang === 'en' ? found.name_en : found.name_am}</h3>
               <span className={`${tm.cardPriceColor} font-black text-lg`}>{found.price} ETB</span>
               <div className={`mt-3 pt-3 border-t border-[#D4AF37]/10`}>
-                <p className={`${tm.cardDescColor} text-sm italic font-light leading-relaxed`}>{found[lang].desc}</p>
+                <p className={`${tm.cardDescColor} text-sm italic font-light leading-relaxed`}>{lang === 'en' ? found.description_en : found.description_am}</p>
               </div>
             </div>
           </div>
@@ -867,11 +870,11 @@ export default function Home() {
                   {cartItemsData.map((item) => (
                     <div key={item.id} className="flex items-center gap-4 group">
                       <div className="w-16 h-16 relative flex-shrink-0 rounded-xl overflow-hidden border border-[#D4AF37]/20 bg-black">
-                        {item.image ? <Image src={item.image} alt={item[lang].name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[#D4AF37] font-serif text-2xl">{item[lang].name[0]}</div>}
+                        {item.image ? <Image src={item.image} alt={lang === 'en' ? item.name_en : item.name_am} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[#D4AF37] font-serif text-2xl">{(lang === 'en' ? item.name_en : item.name_am)[0]}</div>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start">
-                          <h4 className="font-serif text-[#D4AF37] font-bold text-lg truncate pr-2">{item[lang].name}</h4>
+                          <h4 className="font-serif text-[#D4AF37] font-bold text-lg truncate pr-2">{lang === 'en' ? item.name_en : item.name_am}</h4>
                           <span className="font-black text-[#D4AF37] whitespace-nowrap">{item.price} ETB</span>
                         </div>
                         <div className="flex items-center justify-between mt-2">
