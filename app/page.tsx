@@ -179,10 +179,10 @@ export default function Home() {
 
   const { minPrice, maxPrice } = useMemo(() => {
     const allPrices = menuData.flatMap(cat => cat.items.map(item => item.price));
-    if (allPrices.length === 0) return { minPrice: 0, maxPrice: 100 };
+    if (allPrices.length === 0) return { minPrice: 0, maxPrice: 1000 };
     return {
-      minPrice: Math.floor(Math.min(...allPrices)),
-      maxPrice: Math.ceil(Math.max(...allPrices))
+      minPrice: Math.floor(Math.min(...allPrices)) || 0,
+      maxPrice: Math.ceil(Math.max(...allPrices)) || 1000
     };
   }, [menuData]);
 
@@ -491,10 +491,13 @@ export default function Home() {
             <div className={`hidden lg:flex items-center gap-2 ${tm.searchBg} border ${tm.borderMain} rounded-full px-3 py-1 flex-shrink-0 h-9 transition-colors`}>
               <span className="text-[10px] text-[#D4AF37] font-black">{priceLimit} ETB</span>
               <input 
-                type="range" min={minPrice} max={maxPrice} value={priceLimit}
+                type="range" 
+                min={Number(minPrice) || 0} 
+                max={Number(maxPrice) || 1000} 
+                value={Number(priceLimit) || 0}
                 onChange={(e) => setPriceLimit(Number(e.target.value))}
                 className="price-range-slider w-16 md:w-24"
-                style={{ '--progress': `${maxPrice > minPrice ? ((priceLimit - minPrice) / (maxPrice - minPrice)) * 100 : 0}%` } as React.CSSProperties}
+                style={{ '--progress': `${(Number(maxPrice) || 1000) > (Number(minPrice) || 0) ? ((Number(priceLimit) || 0) - (Number(minPrice) || 0)) / ((Number(maxPrice) || 1000) - (Number(minPrice) || 0)) * 100 : 0}%` } as React.CSSProperties}
               />
             </div>
 
@@ -540,12 +543,12 @@ export default function Home() {
                     <div className="relative mb-2 px-2">
                       <input 
                         type="range" 
-                        min={minPrice} 
-                        max={maxPrice} 
-                        value={priceLimit}
+                        min={Number(minPrice) || 0} 
+                        max={Number(maxPrice) || 1000} 
+                        value={Number(priceLimit) || 0}
                         onChange={(e) => setPriceLimit(Number(e.target.value))}
                         className="price-range-slider w-full"
-                        style={{ '--progress': `${maxPrice > minPrice ? ((priceLimit - minPrice) / (maxPrice - minPrice)) * 100 : 0}%` } as React.CSSProperties}
+                        style={{ '--progress': `${(Number(maxPrice) || 1000) > (Number(minPrice) || 0) ? ((Number(priceLimit) || 0) - (Number(minPrice) || 0)) / ((Number(maxPrice) || 1000) - (Number(minPrice) || 0)) * 100 : 0}%` } as React.CSSProperties}
                       />
                       <div className="flex justify-between mt-4">
                         <span className={`text-[10px] font-bold tracking-tighter ${isLightMode ? 'text-gray-400' : 'text-white/30'}`}>{minPrice} ETB</span>
