@@ -437,7 +437,7 @@ export default function Home() {
       items: section.items.filter(item => {
         const itemName = lang === 'en' ? item.name_en : item.name_am;
         const sectionCat = lang === 'en' ? section.category_en : section.category_am;
-        const matchesSearch = itemName.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = (itemName || "").toLowerCase().includes((searchQuery || "").toLowerCase());
         const matchesPrice = item.price <= priceLimit;
         const matchesCategory = activeCategory === "All" || sectionCat === activeCategory;
         

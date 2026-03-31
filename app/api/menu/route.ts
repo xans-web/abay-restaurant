@@ -100,14 +100,6 @@ export async function PUT(request: Request) {
           { $set: { "items.$": item } }
         );
       }
-    } else if (action === 'bulkUpdate') {
-      const { itemIds, updates } = payload;
-      for (const id of itemIds) {
-        await MenuSection.updateOne(
-          { "items.id": id },
-          { $set: { "items.$": updates } }
-        );
-      }
     } else {
       return NextResponse.json({ error: 'Invalid Item Action' }, { status: 400 });
     }

@@ -183,15 +183,6 @@ export default function AdminDashboard() {
     setSelectedItems(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
-  const handleBulkAction = async (updates: Partial<MenuItem>) => {
-    if (selectedItems.length === 0) return;
-    setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    await bulkUpdateItems(selectedItems, updates);
-    setSelectedItems([]);
-    setIsSaving(false);
-    triggerSuccess();
-  };
 
   const triggerSuccess = () => {
     setShowSuccess(true);
@@ -728,13 +719,6 @@ export default function AdminDashboard() {
                     <svg className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${tm.tableSubtext} group-focus-within:${tm.textAcc}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                   </div>
 
-                  <div className="flex items-center justify-between w-full lg:w-auto gap-4 px-2">
-                    <span className={`text-[10px] uppercase tracking-widest ${tm.textAcc} font-black`}>Bulk Action:</span>
-                    <div className="flex gap-2">
-                      <button disabled={selectedItems.length === 0} onClick={() => handleBulkAction({ isSoldOut: false })} className={`px-4 py-3 md:py-2 border rounded-full text-[10px] font-bold uppercase transition active:scale-95 disabled:opacity-30 ${tm.bulkMarkActive} h-11 flex items-center`} style={{ minHeight: '44px' }}>Active</button>
-                      <button disabled={selectedItems.length === 0} onClick={() => handleBulkAction({ isSoldOut: true })} className={`px-4 py-3 md:py-2 border rounded-full text-[10px] font-bold uppercase transition active:scale-95 disabled:opacity-30 ${tm.bulkMarkInactive} h-11 flex items-center`} style={{ minHeight: '44px' }}>Inactive</button>
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -850,21 +834,6 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    {/* Bulk and Delete Actions */}
-                    <div className="flex items-center justify-between gap-4">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                         <input 
-                          type="checkbox" 
-                          checked={selectedItems.includes(item.id)}
-                          onChange={() => toggleSelection(item.id)}
-                          className="w-6 h-6 rounded border-[#D4AF37]/30 accent-[#D4AF37]"
-                        />
-                        <span className="text-[10px] uppercase tracking-widest font-black text-[#D4AF37]">Select</span>
-                      </label>
-                      <button onClick={() => handleDeleteItem(item.id, item.name_en)} className="h-11 w-11 flex items-center justify-center rounded-full bg-red-500/10 text-red-500 active:bg-red-500 active:text-white transition-all shadow-sm">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
-                    </div>
                   </div>
                 ))}
                 {filteredItems.length === 0 && (
@@ -880,17 +849,7 @@ export default function AdminDashboard() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className={`${tm.tableHeader} text-xs uppercase tracking-widest font-bold border-b ${tm.sidebarBorder}`}>
-                        <th className="p-4 w-12 text-center">
-                           <input 
-                            type="checkbox" 
-                            checked={filteredItems.length > 0 && selectedItems.length === filteredItems.length}
-                            onChange={(e) => {
-                              if (e.target.checked) setSelectedItems(filteredItems.map(i => i.id));
-                              else setSelectedItems([]);
-                            }}
-                            className="w-4 h-4 cursor-pointer accent-[#D4AF37]"
-                          />
-                        </th>
+                        <th className="p-4 w-12 text-center"></th>
                         <th className="p-4 w-24">Image</th>
                         <th className="p-4">Item Details (Edit)</th>
                         <th className="p-4 w-24">Price</th>
@@ -905,14 +864,7 @@ export default function AdminDashboard() {
                             ? (isLightMode ? 'bg-[#FFFBEB] border-l-2 border-l-[#D4AF37]' : 'bg-[#D4AF37]/5 border-l-2 border-l-[#D4AF37]')
                             : `${tm.tableRowHover} ${selectedItems.includes(item.id) ? tm.tableRowActive : ''}`
                         }`}>
-                          <td className="p-4 text-center">
-                            <input 
-                              type="checkbox" 
-                              checked={selectedItems.includes(item.id)}
-                              onChange={() => toggleSelection(item.id)}
-                              className="w-4 h-4 cursor-pointer accent-[#D4AF37]"
-                            />
-                          </td>
+                          <td className="p-4 text-center"></td>
                           <td className="p-4">
                             <div className="relative group w-14 h-14">
                               {item.image ? (
