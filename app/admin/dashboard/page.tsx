@@ -27,7 +27,8 @@ export default function AdminDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // Existing states needed
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  // SELECTED ITEMS REMOVED TO ELIMINATE BULK CORRUPTION
+  const [selectedItems, setSelectedItems] = useState<number[]>([]); 
   const [showSuccess, setShowSuccess] = useState(false);
   const [showStatusToast, setShowStatusToast] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -477,7 +478,10 @@ export default function AdminDashboard() {
           {activeTab === "dashboard" && (() => {
             const totalViews = siteContent?.totalViews || 0;
             const dailyViews = siteContent?.dailyViews || 0;
-            const allItemsFlat = menuData.flatMap(cat => cat.items);
+            
+            // STRICT ARRAY SAFETY: Ensure cat.items exists before flattening
+            const allItemsFlat = (menuData || []).flatMap(cat => cat.items || []);
+            
             const totalClicks = allItemsFlat.reduce((acc, item) => acc + (item.clicks || 0), 0);
             const totalCartAdds = allItemsFlat.reduce((acc, item) => acc + (item.cartAdds || 0), 0);
             
@@ -738,7 +742,7 @@ export default function AdminDashboard() {
                             <img src={item.image} className="w-full h-full object-cover rounded-2xl border-2 border-[#D4AF37]/30 shadow-lg" />
                           ) : (
                             <div className={`w-full h-full ${tm.inputBg} border-2 border-dashed ${tm.sidebarBorder} rounded-2xl flex items-center justify-center opacity-40`}>
-                              <span className={`${tm.textAcc} font-serif text-3xl`}>{item.name_en[0]}</span>
+                              <span className={`${tm.textAcc} font-serif text-3xl`}>{(item.name_en || "?")[0]}</span>
                             </div>
                           )}
                         </div>
@@ -871,7 +875,7 @@ export default function AdminDashboard() {
                                 <img src={item.image} className="w-14 h-14 object-cover rounded border border-[#D4AF37]/40 shadow-sm" />
                               ) : (
                                 <div className={`w-14 h-14 ${tm.inputBg} border ${tm.sidebarBorder} rounded flex items-center justify-center`}>
-                                  <span className={`${tm.textAcc} font-serif text-xl opacity-40`}>{item.name_en[0]}</span>
+                                  <span className={`${tm.textAcc} font-serif text-xl opacity-40`}>{(item.name_en || "?")[0]}</span>
                                 </div>
                               )}
                               <div className={`absolute inset-0 ${isLightMode ? 'bg-white/90' : 'bg-black/90'} backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 rounded flex flex-col items-center justify-center border ${tm.sidebarBorder} gap-1 shadow-xl z-20`}>
@@ -1017,7 +1021,7 @@ export default function AdminDashboard() {
                           }}
                           className={`bg-transparent border-none font-serif ${tm.tableText} font-bold text-lg focus:outline-none w-full`}
                         />
-                        <span className={`text-xs ${tm.tableSubtext} uppercase tracking-widest`}>{cat.items.length} items</span>
+                        <span className={`text-xs ${tm.tableSubtext} uppercase tracking-widest`}>{(cat.items?.length || 0)} items</span>
                       </div>
                       <button 
                         onClick={async () => { if(confirm(`Delete category "${cat.category_en}"?`)){ const success = await deleteCategory(cat.id); if(success) { window.location.reload(); }}}}
