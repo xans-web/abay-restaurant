@@ -313,13 +313,13 @@ export default function AdminDashboard() {
     }
   };
 
-  const totalCategories = menuData.length;
-  const totalItems = menuData.reduce((acc, cat) => acc + cat.items.length, 0);
+  const totalCategories = menuData?.length || 0;
+  const totalItems = (menuData || []).reduce((acc, cat) => acc + (cat.items?.length || 0), 0);
 
-  const flatItems = menuData.flatMap(cat => cat.items.map(item => ({...item, categoryName: cat.category_en})));
+  const flatItems = (menuData || []).flatMap(cat => (cat.items || []).map(item => ({...item, categoryName: (cat.category_en || "Uncategorized")})));
   const filteredItems = flatItems.filter(item => 
-    item.name_en.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    item.name_am.toLowerCase().includes(searchQuery.toLowerCase())
+    (item.name_en || "").toLowerCase().includes((searchQuery || "").toLowerCase()) || 
+    (item.name_am || "").toLowerCase().includes((searchQuery || "").toLowerCase())
   );
 
   return (
